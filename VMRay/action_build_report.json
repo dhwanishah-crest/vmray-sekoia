@@ -1,0 +1,90 @@
+{
+  "name": "Build Report",
+  "slug": "build_report",
+  "description": "Build the full VMRay report for sample IDs or submission IDs: analyses, VTIs, MITRE ATT&CK, IOCs, classifications, threat names and screenshots per sample, plus its child samples with their IOCs.",
+  "uuid": "8fef9429-5a84-5f96-b5c6-c152e2d8ad30",
+  "docker_parameters": "BuildReport",
+  "arguments": {
+    "properties": {
+      "sample_ids": {
+        "description": "VMRay sample IDs \u2014 e.g. the `sample_ids` of Get Samples By Hash.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "submission_ids": {
+        "description": "VMRay submission IDs \u2014 e.g. the `submission_ids` of Submit URL Sample. Each is resolved to its sample with one GET /submission/{id}. Used when `sample_ids` is empty.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Submission IDs",
+        "type": "array"
+      },
+      "max_recursion_depth": {
+        "default": 10,
+        "description": "The maximum depth of recursive samples which will be analyzed in the report (at most 10). 0 disables recursion.",
+        "maximum": 10,
+        "minimum": 0,
+        "title": "Max Recursion Depth",
+        "type": "integer"
+      },
+      "ioc_severity_filter": {
+        "description": "Restrict which IOC severities are fetched from VMRay. Allowed values: 'malicious', 'suspicious'. Add exactly one to filter server-side; leave empty (or add both) to fetch both severities. A list with no valid value is an error.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Ioc Severity Filter",
+        "type": "array"
+      },
+      "analysis_verdict_filter": {
+        "description": "Analysis verdicts to include in the report. Allowed values: 'malicious', 'suspicious', 'clean'. Leave empty to include all analyses, including those with an unknown verdict. Note: Adding all three allowed values is NOT the same as leaving empty \u2014 it still excludes analyses with unknown verdicts. A list with no valid value is an error.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Analysis Verdict Filter",
+        "type": "array"
+      },
+      "include_screenshots": {
+        "default": true,
+        "description": "If set to true, the report includes the screenshots of the submitted URL or looked-up hash (the top-level samples only \u2014 never of their child samples).",
+        "title": "Include Screenshots",
+        "type": "boolean"
+      }
+    },
+    "title": "BuildReportArguments",
+    "type": "object"
+  },
+  "results": {
+    "description": "Only a summary travels inline. The report itself \u2014 screenshots included \u2014 can be megabytes, far over\nSekoia's limit on action arguments (SYM216), so it is written to data_path and passed on as a file.",
+    "properties": {
+      "report_path": {
+        "description": "Path (relative to data_path) of the full report JSON \u2014 give it to Render Report and Extract IOCs as `report_path`.",
+        "title": "Report Path",
+        "type": "string"
+      },
+      "sample_ids": {
+        "description": "Samples in the report.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Samples that could not be fetched at all, keyed by sample_id \u2014 or by 'submission:<id>' when the submission itself could not be resolved to a sample.",
+        "title": "Errors",
+        "type": "object"
+      }
+    },
+    "required": [
+      "report_path"
+    ],
+    "title": "BuildReportResults",
+    "type": "object"
+  }
+}

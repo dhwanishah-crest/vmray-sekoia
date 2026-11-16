@@ -1,0 +1,295 @@
+{
+  "name": "Submit File Sample",
+  "slug": "submit_file_sample",
+  "description": "Submit files from the playbook run's storage (e.g. malware fetched from an EDR) to VMRay, wait until every resulting submission has finished, and return them.",
+  "uuid": "cc41aa44-5cb4-5a3f-85d4-9c0164695d1d",
+  "docker_parameters": "SubmitFileSample",
+  "arguments": {
+    "properties": {
+      "shareable": {
+        "default": false,
+        "description": "If set to true, the hash of the sample will be shared with VirusTotal.",
+        "title": "Shareable",
+        "type": "boolean"
+      },
+      "max_recursive_samples": {
+        "default": 10,
+        "description": "The maximum amount of recursive samples which will be analyzed (at most 10). 0 disables recursion.",
+        "maximum": 10,
+        "minimum": 0,
+        "title": "Max Recursive Samples",
+        "type": "integer"
+      },
+      "max_jobs": {
+        "description": "Limits the amount of jobs that can be created by jobrules for a submission.",
+        "title": "Max Jobs",
+        "type": "integer"
+      },
+      "enable_reputation": {
+        "description": "If set to true, reputation lookups will be performed for submitted samples and analysis artifacts (file hash and URL lookups) by the VMRay cloud reputation service and additional third party services. The user analyzer setting is used as default value for this parameter.",
+        "title": "Enable Reputation",
+        "type": "boolean"
+      },
+      "enable_whois": {
+        "description": "If set to true, domains seen during analyses are queried with external WHOIS service. The user analyzer setting is used as default value for this parameter.",
+        "title": "Enable Whois",
+        "type": "boolean"
+      },
+      "analyzer_mode": {
+        "description": "Specifies which types of analyzers will be used for analyzing this sample. Supported strings are 'reputation', 'reputation_static', 'reputation_static_dynamic', 'static_dynamic', and 'static'. The user analyzer setting is used as default value for this parameter.",
+        "title": "Analyzer Mode",
+        "type": "string"
+      },
+      "known_malicious": {
+        "description": "If set to true, triage will be used to pre-filter known malicious samples by results of reputation lookup (if allowed) and static analysis. The user analyzer setting is used as default value for this parameter.",
+        "title": "Known Malicious",
+        "type": "boolean"
+      },
+      "known_benign": {
+        "description": "If set to true, triage will be used to pre-filter known benign samples by results of reputation lookup (if allowed) and static analysis. The user analyzer setting is used as default value for this parameter.",
+        "title": "Known Benign",
+        "type": "boolean"
+      },
+      "analysis_timeout": {
+        "description": "Analysis timeout in seconds.",
+        "title": "Analysis Timeout",
+        "type": "integer"
+      },
+      "net_scheme_name": {
+        "description": "Name of the network schema.",
+        "title": "Net Scheme Name",
+        "type": "string"
+      },
+      "files": {
+        "description": "Files to submit, as paths in the playbook run's data storage \u2014 e.g. the `files` of SentinelOne's Get malwares from threat, given as is: a list of {\"path\": ...} objects or of paths.",
+        "items": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "minItems": 1,
+        "title": "Files",
+        "type": "array"
+      },
+      "reanalyze": {
+        "default": true,
+        "description": "If set to true, known samples will be re-analyzed on submission. This is enabled by default.",
+        "title": "Reanalyze",
+        "type": "boolean"
+      },
+      "tags": {
+        "description": "Tags to attach to the sample.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Tags",
+        "type": "array"
+      },
+      "query_retry_wait": {
+        "default": 10,
+        "description": "The amount of seconds to wait before trying to fetch the results.",
+        "exclusiveMinimum": 0,
+        "title": "Query Retry Wait",
+        "type": "number"
+      },
+      "timeout": {
+        "default": 1800,
+        "description": "Maximum time (seconds) to wait for every submission to finish, then the action stops and takes the timed_out branch.",
+        "minimum": 0,
+        "title": "Timeout",
+        "type": "number"
+      }
+    },
+    "required": [
+      "files"
+    ],
+    "title": "SubmitFileSampleArguments",
+    "type": "object"
+  },
+  "results": {
+    "$defs": {
+      "Submission": {
+        "additionalProperties": true,
+        "description": "One submission object, as GET /submission/{id} returns it once finished.",
+        "properties": {
+          "submission_id": {
+            "title": "Submission ID",
+            "type": "integer"
+          },
+          "submission_sample_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Sample ID"
+          },
+          "submission_finished": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Finished"
+          },
+          "submission_has_errors": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Has Errors"
+          },
+          "submission_verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Verdict"
+          },
+          "submission_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Score"
+          },
+          "submission_original_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Original URL"
+          },
+          "submission_consumed_quota": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Consumed Quota"
+          },
+          "submission_webif_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Webif URL"
+          }
+        },
+        "required": [
+          "submission_id"
+        ],
+        "title": "Submission",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "submissions": {
+        "description": "Finished submissions.",
+        "items": {
+          "$ref": "#/$defs/Submission"
+        },
+        "title": "Submissions",
+        "type": "array"
+      },
+      "submission_ids": {
+        "description": "IDs of the finished submissions \u2014 input for the report.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Submission IDs",
+        "type": "array"
+      },
+      "sample_ids": {
+        "description": "Distinct sample_ids of the finished submissions \u2014 input for the report.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "pending_submission_ids": {
+        "description": "Submissions still running when the wait timed out.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Pending Submission IDs",
+        "type": "array"
+      },
+      "timed_out": {
+        "default": false,
+        "title": "Timed Out",
+        "type": "boolean"
+      },
+      "failed_submission_ids": {
+        "description": "Submissions that finished with an error, or could not be followed.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Failed Submission IDs",
+        "type": "array"
+      },
+      "errors": {
+        "description": "Errors VMRay returned on submit, and why a submission failed.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Errors",
+        "type": "array"
+      },
+      "submitted_files": {
+        "description": "Files VMRay accepted. A file that could not be read or was refused is in `errors`.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Submitted Files",
+        "type": "array"
+      }
+    },
+    "title": "SubmitFileSampleResults",
+    "type": "object"
+  }
+}
