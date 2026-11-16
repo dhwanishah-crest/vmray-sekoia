@@ -214,11 +214,9 @@ class SubmitUrlSampleResults(BaseModel):
 class SubmitFileSampleArguments(SubmissionOptions):
     files: list[str] = Field(
         ...,
-        min_length=1,
         title="Files",
         description="Files to submit, as paths in the playbook run's data storage — e.g. the `files` of "
         'SentinelOne\'s Get malwares from threat, given as is: a list of {"path": ...} objects or of paths.',
-        json_schema_extra={"items": {"anyOf": [{"type": "string"}, {"type": "object"}]}},
     )
     reanalyze: Reanalyze
     tags: Tags
@@ -242,6 +240,13 @@ class SubmitFileSampleArguments(SubmissionOptions):
             if path.strip():
                 paths.append(path.strip())
         return list(dict.fromkeys(paths))
+
+    @field_validator("files", mode="after")
+    @classmethod
+    def _at_least_one(cls, value: list[str]) -> list[str]:
+        if not value:
+            raise ValueError("at least one file is required")
+        return value
 
 
 class SubmitFileSampleResults(SubmitUrlSampleResults):

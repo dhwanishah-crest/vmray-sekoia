@@ -32,5 +32,17 @@
     ],
     "workspace": "Operation Center",
     "description": "On every new SentinelOne alert, fetch the threat's malware file from the endpoint, detonate it in VMRay, post the full report with screenshots as alert comments, and push the IOCs to an IOC collection"
+  },
+  {
+    "file": "vmray_sentinelone_demo.json",
+    "name": "Alert Created - Demo Defend VMRay",
+    "tags": [
+      "Alerts",
+      "Enrichment",
+      "VMRay",
+      "SentinelOne"
+    ],
+    "workspace": "Operation Center",
+    "description": "Demo: on every new SentinelOne alert, fetch the threat's malware file, detonate it in VMRay, comment the report and push IOCs"
   }
 ]

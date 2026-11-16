@@ -63,16 +63,8 @@
       "files": {
         "description": "Files to submit, as paths in the playbook run's data storage \u2014 e.g. the `files` of SentinelOne's Get malwares from threat, given as is: a list of {\"path\": ...} objects or of paths.",
         "items": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "object"
-            }
-          ]
+          "type": "string"
         },
-        "minItems": 1,
         "title": "Files",
         "type": "array"
       },
@@ -292,4 +284,4 @@
     "title": "SubmitFileSampleResults",
     "type": "object"
   }
-}
+}
