@@ -1,0 +1,379 @@
+{
+  "name": "Alert Created - Demo Defend VMRay1",
+  "uuid": "9679c108-52e4-485e-9222-1204578a3fb4",
+  "tags": [
+    "Alerts",
+    "Enrichment",
+    "VMRay",
+    "SentinelOne"
+  ],
+  "workspace": "Operation Center",
+  "description": "Runs on every new alert. Reads the SentinelOne threat ID (sentinelone.threatId) from the alert's first event (any other alert stops silently), has SentinelOne fetch the threat's malware file(s) into the playbook run's storage, submits them to VMRay (consumes quota, waits up to 30 min), posts the full report with screenshots as alert comments and pushes the IOCs to an IOC collection. Before use: set ioc_collection_id on 'Add IOCs to IOC Collection' and select your VMRay1 module configuration on the VMRay nodes.",
+  "nodes": {
+    "0": {
+      "name": "Alert Created",
+      "type": "trigger",
+      "outputs": {
+        "default": [
+          "2"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1500
+      },
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "trigger_uuid": "785583cf-4377-43ce-a5fb-f4572eb57456",
+      "trigger_configuration_uuid": "ee261702-b5b4-439c-bc21-e30f00ea0c88"
+    },
+    "2": {
+      "name": "Get Events",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "3"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1972
+      },
+      "arguments": {
+        "limit": 1,
+        "query": "alert_short_ids:\"{{ node.0.short_id }}\"",
+        "latest_time": "{{ node.0.last_seen_at }}",
+        "earliest_time": "{{ node.0.first_seen_at }}"
+      },
+      "action_uuid": "af0b4355-a428-43d6-991c-d5ff878e17d5",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "3": {
+      "name": "SentinelOne Threat?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ ((node.2['events'][0].get('sentinelone.threatId') or '') | string | length) if node.2['events'] else 0 }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "The alert's first event carries a SentinelOne threat ID — any other alert stops here silently"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "4"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 2100,
+        "y": 2208
+      }
+    },
+    "4": {
+      "name": "SentinelOne: Get malwares from threat",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "5"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2444
+      },
+      "arguments": {
+        "timeout": 300,
+        "threat_id": "{{ node.2['events'][0]['sentinelone.threatId'] }}"
+      },
+      "action_uuid": "3555538c-376e-4e56-8ba4-ef94e8317376",
+      "module_uuid": "ff675e74-e5c1-47c8-a571-d207fc297464",
+      "module_configuration_uuid": "95d91bae-3dcc-47ed-8c0d-050e83f31d56"
+    },
+    "5": {
+      "name": "Malware Retrieved?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ ((node.4.get('files') or []) | length) if node.4.get('status') == 'succeed' else 0 }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "SentinelOne fetched the threat's file(s) from the endpoint into the playbook run's storage"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "6"
+        ],
+        "else": [
+          "7"
+        ]
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 2100,
+        "y": 2680
+      }
+    },
+    "6": {
+      "name": "VMRay: Submit File Sample",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "timed_out": [
+          "9"
+        ],
+        "submission_failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2916
+      },
+      "arguments": {
+        "files": "{{ node.4['files'] }}",
+        "reanalyze": true
+      },
+      "action_uuid": "8edeaf02-d2c1-46d0-991c-50290ddf6a2c",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+    },
+    "7": {
+      "name": "Comment Alert (Malware Not Retrieved)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2700,
+        "y": 2916
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: no sample to analyse** — SentinelOne did not fetch the file of threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}`, so nothing was sent to the sandbox and no quota was spent.\n\nSentinelOne: `{{ (node.4.get('status') or 'unknown') | string | replace('`', \"'\") }}` — {{ (node.4.get('status_reason') or 'no reason given') | string | replace('`', \"'\") }}{% if node.4.get('status') == 'succeed' %} (but no file came back){% endif %}.\n\nThe endpoint's agent must be online, and the SentinelOne API user needs the permission to fetch threat files."
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+    },
+    "8": {
+      "name": "VMRay: Build Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "10"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 3152
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}",
+        "include_screenshots": true,
+        "max_recursion_depth": 5
+      },
+      "action_uuid": "9689eaa4-7411-44e3-a6b8-817121c41256",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+    },
+    "9": {
+      "name": "Comment Alert (Sandbox Incomplete)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2400,
+        "y": 3152
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: sandbox analysis incomplete** — the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}` did not return a report.{% if node.6['timed_out'] %}\n\nTimed out waiting: submission(s) {{ node.6['pending_submission_ids'] | join(', ') }} may still finish on VMRay.{% endif %}{% if node.6['failed_submission_ids'] %}\n\nFailed submission(s): {{ node.6['failed_submission_ids'] | join(', ') }}.{% endif %}{% if node.6['errors'] %}\n\nErrors:\n{% for e in node.6['errors'] %}\n- {% if e.get('file') %}file `{{ e.get('file') | string | replace('`', \"'\") }}`: {% elif e.get('submission_id') %}submission {{ e.get('submission_id') }}: {% endif %}`{{ (e.get('error_msg') or 'unknown error') | string | replace('`', \"'\") | replace('\\n', ' ') }}`{% endfor %}{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+    },
+    "10": {
+      "name": "VMRay: Render Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "11"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 3388
+      },
+      "arguments": {
+        "report_path": "{{ node.8['report_path'] }}",
+        "max_comment_kb": 512
+      },
+      "action_uuid": "8d9030e2-fdab-435d-b7a9-c5516a43d362",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+    },
+    "11": {
+      "name": "Comment Alert (Report)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "12",
+          "13"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 3624
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "{{ node.10['content'] }}{% if node.6['errors'] %}<p><b>Not in this report</b></p><ul>{% for e in node.6['errors'] %}<li>{% if e.get('file') %}file <code>{{ e.get('file') | e }}</code>{% elif e.get('submission_id') %}submission {{ e.get('submission_id') }}{% endif %} — <code>{{ (e.get('error_msg') or 'unknown error') | e }}</code></li>{% endfor %}</ul>{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+    },
+    "12": {
+      "name": "Screenshots?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ node.10['screenshot_comments'] | length }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "The report has no screenshot — a Foreach rejects an empty list (\"Foreach input is not a list\")"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "14"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 2100,
+        "y": 3860
+      }
+    },
+    "13": {
+      "name": "VMRay: Extract IOCs",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "16"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 4096
+      },
+      "arguments": {
+        "report_path": "{{ node.8['report_path'] }}"
+      },
+      "action_uuid": "c75fb414-5642-4797-85fa-603502cd9bbb",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+    },
+    "14": {
+      "name": "Foreach Screenshot Comment",
+      "type": "operator",
+      "subtype": "foreach",
+      "items": "{{ node.10['screenshot_comments'] }}",
+      "loop": [
+        "15"
+      ],
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2100,
+        "y": 4096
+      }
+    },
+    "15": {
+      "name": "Comment Alert (Screenshots)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2400,
+        "y": 4096
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "{{ node.14.default.value }}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+    },
+    "16": {
+      "name": "Indicators to Push?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ node.13['indicator_groups'] | length }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "Extract IOCs found no indicator to push — a Foreach rejects an empty list (\"Foreach input is not a list\")"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "17"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 1800,
+        "y": 4332
+      }
+    },
+    "17": {
+      "name": "Foreach Indicator Type",
+      "type": "operator",
+      "subtype": "foreach",
+      "items": "{{ node.13['indicator_groups'] }}",
+      "loop": [
+        "18"
+      ],
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 1800,
+        "y": 4568
+      }
+    },
+    "18": {
+      "name": "Add IOCs to IOC Collection",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2100,
+        "y": 4568
+      },
+      "arguments": {
+        "valid_for": 30,
+        "indicators": "{{ node.17.default.value['indicators'] }}",
+        "indicator_type": "{{ node.17.default.value['type'] }}",
+        "ioc_collection_id": "ioc-collection--xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "action_uuid": "0acabc04-43b4-4564-b9b2-08b80e0e1ecf",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+    }
+  },
+  "community_uuid": "2b44a715-e677-4489-9803-19c8e7929f85"
+}

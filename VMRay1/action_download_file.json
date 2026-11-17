@@ -1,0 +1,72 @@
+{
+  "name": "Download File",
+  "slug": "download_file",
+  "description": "Download a file from an http(s) URL into the playbook run's storage, ready for Submit File Sample.",
+  "uuid": "5ab13054-2833-442f-884e-9e8fba2d20ef",
+  "docker_parameters": "DownloadFile",
+  "arguments": {
+    "properties": {
+      "url": {
+        "description": "http(s) URL of the file to download.",
+        "minLength": 1,
+        "title": "URL",
+        "type": "string"
+      },
+      "max_size_mb": {
+        "default": 32,
+        "description": "Largest file accepted, in megabytes.",
+        "maximum": 256,
+        "minimum": 1,
+        "title": "Max size (MB)",
+        "type": "integer"
+      },
+      "timeout": {
+        "default": 60,
+        "description": "Seconds to wait for each request of the download.",
+        "exclusiveMinimum": 0,
+        "title": "Timeout",
+        "type": "number"
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "title": "DownloadFileArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "files": {
+        "description": "The downloaded file as {\"path\": ...} \u2014 input for Submit File Sample.",
+        "items": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "title": "Files",
+        "type": "array"
+      },
+      "file_name": {
+        "default": "",
+        "description": "Name taken from the response or the URL.",
+        "title": "File Name",
+        "type": "string"
+      },
+      "sha256": {
+        "default": "",
+        "description": "SHA-256 of the downloaded file.",
+        "title": "SHA-256",
+        "type": "string"
+      },
+      "size": {
+        "default": 0,
+        "description": "Size of the file in bytes.",
+        "title": "Size",
+        "type": "integer"
+      }
+    },
+    "title": "DownloadFileResults",
+    "type": "object"
+  }
+}

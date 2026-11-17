@@ -1,48 +1,24 @@
 [
   {
-    "file": "vmray_report_on_demand.json",
-    "name": "VMRay: Report on demand (Hash + URL)",
+    "file": "vmray1_sentinelone_demo.json",
+    "name": "Alert Created - Demo Defend VMRay1",
     "tags": [
       "Alerts",
       "Enrichment",
-      "VMRay"
+      "VMRay1"
     ],
     "workspace": "Operation Center",
-    "description": "Look up the alert's file hashes and detonate its URL in VMRay, post the full report with screenshots as alert comments, and push the IOCs to an IOC collection"
+    "description": "On every new SentinelOne alert, fetch the threat's file from the endpoint, detonate it in VMRay1, post the report with screenshots as alert comments and push the IOCs to an IOC collection"
   },
   {
-    "file": "vmray_report_on_alert_creation.json",
-    "name": "VMRay: Report on alert creation (Hash + URL)",
+    "file": "vmray1_scan_file_from_url.json",
+    "name": "VMRay1: Scan file from URL",
     "tags": [
       "Alerts",
       "Enrichment",
-      "VMRay"
+      "VMRay1"
     ],
     "workspace": "Operation Center",
-    "description": "On every new alert, look up its file hashes and detonate its URL in VMRay, post the full report with screenshots as alert comments, and push the IOCs to an IOC collection"
-  },
-  {
-    "file": "new.json",
-    "name": "VMRay: Sandbox SentinelOne malware on alert creation",
-    "tags": [
-      "Alerts",
-      "Enrichment",
-      "VMRay",
-      "SentinelOne"
-    ],
-    "workspace": "Operation Center",
-    "description": "On every new SentinelOne alert, fetch the threat's malware file from the endpoint, detonate it in VMRay, post the full report with screenshots as alert comments, and push the IOCs to an IOC collection"
-  },
-  {
-    "file": "vmray_sentinelone_demo.json",
-    "name": "Alert Created - Demo Defend VMRay",
-    "tags": [
-      "Alerts",
-      "Enrichment",
-      "VMRay",
-      "SentinelOne"
-    ],
-    "workspace": "Operation Center",
-    "description": "Demo: on every new SentinelOne alert, fetch the threat's malware file, detonate it in VMRay, comment the report and push IOCs"
+    "description": "Test a file scan: download a file from a URL, detonate it in VMRay1, post the report with screenshots as alert comments and push the IOCs to an IOC collection"
   }
 ]
