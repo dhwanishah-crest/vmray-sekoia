@@ -303,35 +303,6 @@ class GetSamplesByHashResults(BaseModel):
 
 
 # --------------------------------------------------------------------------
-# DownloadFile — put a file from a URL into the playbook run's data path
-# --------------------------------------------------------------------------
-
-
-class DownloadFileArguments(BaseModel):
-    url: str = Field(..., min_length=1, title="URL", description="http(s) URL of the file to download.")
-    max_size_mb: int = Field(
-        default=32, ge=1, le=256, title="Max size (MB)", description="Largest file accepted, in megabytes."
-    )
-    timeout: float = Field(
-        default=60, gt=0, allow_inf_nan=False, description="Seconds to wait for each request of the download."
-    )
-
-    @field_validator("url", mode="before")
-    @classmethod
-    def _strip(cls, value: Any) -> Any:
-        return value.strip() if isinstance(value, str) else value
-
-
-class DownloadFileResults(BaseModel):
-    files: list[dict[str, str]] = Field(
-        default_factory=list, description='The downloaded file as {"path": ...} — input for Submit File Sample.'
-    )
-    file_name: str = Field(default="", title="File Name", description="Name taken from the response or the URL.")
-    sha256: str = Field(default="", title="SHA-256", description="SHA-256 of the downloaded file.")
-    size: int = Field(default=0, description="Size of the file in bytes.")
-
-
-# --------------------------------------------------------------------------
 # BuildReport
 # --------------------------------------------------------------------------
 

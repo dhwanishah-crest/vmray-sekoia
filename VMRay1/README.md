@@ -2,7 +2,7 @@
 
 VMRay Platform - Agentless hypervisor-based sandbox for malware detonation, VTI scoring and IOC extraction.
 
-VMRay1 scans **files and URLs**: a Sekoia.io playbook looks up file hashes in VMRay, detonates a URL, or gets a file into the run's storage (downloaded from a URL, or fetched from an EDR such as SentinelOne) and detonates it in VMRay, builds the full VMRay report, posts it on the alert as a comment (with screenshots), and pushes the indicators found to a Sekoia IOC collection. It installs next to the original VMRay integration and does not replace it.
+VMRay1 scans **files and URLs**: a Sekoia.io playbook looks up file hashes in VMRay, detonates a URL, or gets a file into the run's storage (fetched from an EDR such as SentinelOne) and detonates it in VMRay, builds the full VMRay report, posts it on the alert as a comment (with screenshots), and pushes the indicators found to a Sekoia IOC collection. It installs next to the original VMRay integration and does not replace it.
 
 ## Configuration
 
@@ -13,12 +13,12 @@ See [CONFIGURE.md](CONFIGURE.md): requirements, creating the VMRay API key, conn
 ```
 hashes ──► GetSamplesByHash ──► sample_ids ─────┐
 URL ─────► SubmitUrlSample ───► submission_ids ─┤
-URL ─────► DownloadFile ──┐                     ├─► BuildReport ──► report_path ─┬─► RenderReport ──► comment + screenshot comments
-SentinelOne malware ──────┴─► files ──► SubmitFileSample ─► submission_ids ─┘    └─► ExtractIocs ──────► IOC collection
+                                                 ├─► BuildReport ──► report_path ─┬─► RenderReport ──► comment + screenshot comments
+SentinelOne malware ──────► files ──► SubmitFileSample ─► submission_ids ─┘    └─► ExtractIocs ──────► IOC collection
 ```
 
 1. **Find or create samples.** `GetSamplesByHash` looks hashes up in VMRay's existing analyses (no quota). `SubmitUrlSample` detonates a URL and waits for the result (consumes quota).
-2. **Or put a file in the run's storage.** `DownloadFile` fetches a URL there; an EDR action such as SentinelOne's "Get malwares from threat" does the same. Both return `files`, a list of `{"path": ...}`.
+2. **Or put a file in the run's storage.** An EDR action such as SentinelOne's "Get malwares from threat" fetches it from the endpoint and returns `files`, a list of `{"path": ...}`.
 3. **Detonate it.** `SubmitFileSample` uploads each file to VMRay and waits for the result (consumes quota).
 4. **Build the report.** `BuildReport` fetches everything VMRay knows about each sample and writes the report to a JSON file on the run's storage. Only the file's path travels between nodes: a report with screenshots is far larger than Sekoia accepts as an action argument (SYM216).
 5. **Use the report.** `RenderReport` turns it into the alert comment; `ExtractIocs` turns it into indicators for an IOC collection. Neither calls VMRay or Sekoia.
@@ -54,23 +54,9 @@ There are no archive settings (archive password, compound sample): they only app
 
 **Outputs:** `completed` / `timed_out` / `submission_failed`. **Results:** `submission_ids`, `sample_ids`, `submissions`, `pending_submission_ids` (still running at the timeout), `errors` (VMRay's reasons for a rejected submission).
 
-### `DownloadFile` - Download File
-
-Downloads a file from an http(s) URL into the playbook run's storage, in the shape `SubmitFileSample` takes.
-
-| Argument | Default | Notes |
-|---|---|---|
-| `url` | required | http(s) URL of the file |
-| `max_size_mb` | `32` | largest file accepted, 1 to 256 |
-| `timeout` | `60` | seconds to wait for each request |
-
-The URL must resolve to public addresses only, and so must every redirect (at most 5, followed one by one): loopback, private and link-local addresses, such as a cloud metadata endpoint, are refused. The file is stored as `<sha256>_<file name>`; the name comes from `Content-Disposition` or the URL, reduced to safe characters. A failed, empty or oversized download fails the action with the reason.
-
-**Results:** `files` (`[{"path": ...}]`), `file_name`, `sha256`, `size`.
-
 ### `SubmitFileSample` - Submit File Sample
 
-Uploads files from the playbook run's storage (`POST /sample/submit` with `sample_file`) and polls every resulting submission until it finishes. Built for `DownloadFile` and for SentinelOne's "Get malwares from threat", which fetches a threat's file(s) from the endpoint, decrypts them and writes them to the storage named by SHA-1.
+Uploads files from the playbook run's storage (`POST /sample/submit` with `sample_file`) and polls every resulting submission until it finishes. Built for SentinelOne's "Get malwares from threat", which fetches a threat's file(s) from the endpoint, decrypts them and writes them to the storage named by SHA-1.
 
 | Argument | Default | Notes |
 |---|---|---|
@@ -164,10 +150,10 @@ Extracts a report's IOCs as indicators for Sekoia's "Add IOC to IOC Collection" 
 
 | Template | Trigger | Use |
 |---|---|---|
-| `vmray1_scan_file_from_url.json` | Manual - an analyst runs it on an alert | Test a file scan end to end: downloads the file at the URL set on "Download File" (the EICAR test file by default) and posts the report on the alert |
+| `vmray1_sentinelone_manual_tmp.json` | Manual - an analyst runs it on an alert | Same steps as the Alert Created one, for testing: run it on an alert whose first event carries a SentinelOne threat ID |
 | `vmray1_sentinelone_demo.json` | Alert Created | Fetches a SentinelOne threat's file from the endpoint and scans it |
 
-Both finish the same way: `BuildReport` → `RenderReport` → Comment Alert, then the screenshot comments and the IOC push. When the analysis times out or fails, a comment says so and lists the submissions still running. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
+Both end the same way: `BuildReport` → `RenderReport` → Comment Alert, then the screenshot comments and the IOC push. When the analysis times out or fails, a comment says so and lists the submissions still running. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
 
 **After creating a playbook from a template:** select your VMRay1 account on the VMRay1 nodes, and set `ioc_collection_id` on "Add IOCs to IOC Collection". For the SentinelOne one, also select your SentinelOne account (its API user needs the permission to fetch threat files, and the endpoint's agent must be online) and consider limiting the trigger to SentinelOne rules: every file submitted consumes quota.
 
@@ -179,9 +165,7 @@ Both finish the same way: `BuildReport` → `RenderReport` → Comment Alert, th
 
 **No nested loops inside a loop.** A Foreach inside another Foreach cannot iterate a list produced inside the outer loop — its input arrives empty.
 
-**Files come from another action, not from the alert.** Sekoia alerts don't carry sample bytes: `SubmitFileSample` submits files that `DownloadFile` or an EDR action wrote to the playbook run's storage. Without one, a hash is looked up and a URL is detonated.
-
-**DownloadFile checks the host's addresses before connecting.** A host that changes its DNS answer between the check and the connection (DNS rebinding) is not caught.
+**Files come from another action, not from the alert.** Sekoia alerts don't carry sample bytes: `SubmitFileSample` submits files that an EDR action wrote to the playbook run's storage. Without one, a hash is looked up and a URL is detonated.
 
 ## Development
 

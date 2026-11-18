@@ -32,10 +32,10 @@ Look up file hashes in VMRay, detonate URLs or scan files from a Sekoia.io playb
 8. Open or create a playbook, add the VMRay1 actions, and select the VMRay1 account you just connected in each one's `Account` tab. A typical chain:
 
     - `Get Samples By Hash` (file hashes of the alert) or `Submit URL Sample` (a URL of the alert), or
-    - `Download File` (a URL) or an EDR action such as SentinelOne's `Get malwares from threat`, which put the file in the run's storage,
+    - an EDR action such as SentinelOne's `Get malwares from threat`, which puts the file in the run's storage,
     - `Submit File Sample` with their `files`,
     - then `Build Report` with the `sample_ids` or `submission_ids` they return,
     - then `Render Report` and the Sekoia.io `Comment Alert` action to post the report on the alert, with a `Foreach` over `screenshot_comments` for the screenshots,
     - and `Extract IOCs` with the Sekoia.io `Add IOC to IOC Collection` action to push the indicators, with a `Foreach` over `indicator_groups`.
 
-Ready-made playbooks are in `playbooks/templates/`: "VMRay1: Scan file from URL", run by an analyst on an alert, and "VMRay1: Alert Created - Scan SentinelOne file", which scans the file of a SentinelOne threat. After creating a playbook from one, select your VMRay1 account on the VMRay1 nodes and set the IOC collection on `Add IOCs to IOC Collection`. Every file submitted consumes quota.
+Ready-made playbooks are in `playbooks/templates/`: "VMRay1: Alert Created - Scan SentinelOne file", which scans the file of a SentinelOne threat, and a Manual-trigger copy of it for testing. After creating a playbook from one, select your VMRay1 account on the VMRay1 nodes and set the IOC collection on `Add IOCs to IOC Collection`. Every file submitted consumes quota.

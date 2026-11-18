@@ -11,14 +11,15 @@
     "description": "On every new SentinelOne alert, fetch the threat's file from the endpoint, detonate it in VMRay1, post the report with screenshots as alert comments and push the IOCs to an IOC collection"
   },
   {
-    "file": "vmray1_scan_file_from_url.json",
-    "name": "VMRay1: Scan file from URL",
+    "file": "vmray1_sentinelone_manual_tmp.json",
+    "name": "VMRay1: Manual - Scan SentinelOne file (TMP test)",
     "tags": [
       "Alerts",
       "Enrichment",
-      "VMRay1"
+      "VMRay",
+      "SentinelOne"
     ],
     "workspace": "Operation Center",
-    "description": "Test a file scan: download a file from a URL, detonate it in VMRay1, post the report with screenshots as alert comments and push the IOCs to an IOC collection"
+    "description": "Temporary test copy of the SentinelOne scan playbook with a Manual trigger"
   }
 ]
