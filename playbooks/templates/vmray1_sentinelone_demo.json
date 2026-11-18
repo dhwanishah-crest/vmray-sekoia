@@ -1,5 +1,5 @@
 {
-  "name": "Alert Created - Demo Defend VMRay1",
+  "name": "VMRay1: Alert Created - Scan SentinelOne file",
   "uuid": "9679c108-52e4-485e-9222-1204578a3fb4",
   "tags": [
     "Alerts",
@@ -141,7 +141,8 @@
         "reanalyze": true
       },
       "action_uuid": "8edeaf02-d2c1-46d0-991c-50290ddf6a2c",
-      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
     },
     "7": {
       "name": "Comment Alert (Malware Not Retrieved)",
@@ -159,7 +160,8 @@
         "content": "**VMRay: no sample to analyse** — SentinelOne did not fetch the file of threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}`, so nothing was sent to the sandbox and no quota was spent.\n\nSentinelOne: `{{ (node.4.get('status') or 'unknown') | string | replace('`', \"'\") }}` — {{ (node.4.get('status_reason') or 'no reason given') | string | replace('`', \"'\") }}{% if node.4.get('status') == 'succeed' %} (but no file came back){% endif %}.\n\nThe endpoint's agent must be online, and the SentinelOne API user needs the permission to fetch threat files."
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
-      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
     },
     "8": {
       "name": "VMRay: Build Report",
@@ -179,7 +181,8 @@
         "max_recursion_depth": 5
       },
       "action_uuid": "9689eaa4-7411-44e3-a6b8-817121c41256",
-      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
     },
     "9": {
       "name": "Comment Alert (Sandbox Incomplete)",
@@ -197,7 +200,8 @@
         "content": "**VMRay: sandbox analysis incomplete** — the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}` did not return a report.{% if node.6['timed_out'] %}\n\nTimed out waiting: submission(s) {{ node.6['pending_submission_ids'] | join(', ') }} may still finish on VMRay.{% endif %}{% if node.6['failed_submission_ids'] %}\n\nFailed submission(s): {{ node.6['failed_submission_ids'] | join(', ') }}.{% endif %}{% if node.6['errors'] %}\n\nErrors:\n{% for e in node.6['errors'] %}\n- {% if e.get('file') %}file `{{ e.get('file') | string | replace('`', \"'\") }}`: {% elif e.get('submission_id') %}submission {{ e.get('submission_id') }}: {% endif %}`{{ (e.get('error_msg') or 'unknown error') | string | replace('`', \"'\") | replace('\\n', ' ') }}`{% endfor %}{% endif %}"
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
-      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
     },
     "10": {
       "name": "VMRay: Render Report",
@@ -216,7 +220,8 @@
         "max_comment_kb": 512
       },
       "action_uuid": "8d9030e2-fdab-435d-b7a9-c5516a43d362",
-      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
     },
     "11": {
       "name": "Comment Alert (Report)",
@@ -237,7 +242,8 @@
         "content": "{{ node.10['content'] }}{% if node.6['errors'] %}<p><b>Not in this report</b></p><ul>{% for e in node.6['errors'] %}<li>{% if e.get('file') %}file <code>{{ e.get('file') | e }}</code>{% elif e.get('submission_id') %}submission {{ e.get('submission_id') }}{% endif %} — <code>{{ (e.get('error_msg') or 'unknown error') | e }}</code></li>{% endfor %}</ul>{% endif %}"
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
-      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
     },
     "12": {
       "name": "Screenshots?",
@@ -279,19 +285,20 @@
         "report_path": "{{ node.8['report_path'] }}"
       },
       "action_uuid": "c75fb414-5642-4797-85fa-603502cd9bbb",
-      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2"
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
     },
     "14": {
-      "name": "Foreach Screenshot Comment",
-      "type": "operator",
-      "subtype": "foreach",
-      "items": "{{ node.10['screenshot_comments'] }}",
       "loop": [
         "15"
       ],
+      "name": "Foreach Screenshot Comment",
+      "type": "operator",
+      "items": "{{ node.10['screenshot_comments'] }}",
       "outputs": {
         "default": []
       },
+      "subtype": "foreach",
       "position": {
         "x": 2100,
         "y": 4096
@@ -313,7 +320,8 @@
         "content": "{{ node.14.default.value }}"
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
-      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
     },
     "16": {
       "name": "Indicators to Push?",
@@ -340,16 +348,16 @@
       }
     },
     "17": {
-      "name": "Foreach Indicator Type",
-      "type": "operator",
-      "subtype": "foreach",
-      "items": "{{ node.13['indicator_groups'] }}",
       "loop": [
         "18"
       ],
+      "name": "Foreach Indicator Type",
+      "type": "operator",
+      "items": "{{ node.13['indicator_groups'] }}",
       "outputs": {
         "default": []
       },
+      "subtype": "foreach",
       "position": {
         "x": 1800,
         "y": 4568
@@ -369,10 +377,11 @@
         "valid_for": 30,
         "indicators": "{{ node.17.default.value['indicators'] }}",
         "indicator_type": "{{ node.17.default.value['type'] }}",
-        "ioc_collection_id": "ioc-collection--xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        "ioc_collection_id": "ioc-collection--8a88f80e-b58f-45e4-940d-ab0ecf9fe35b"
       },
       "action_uuid": "0acabc04-43b4-4564-b9b2-08b80e0e1ecf",
-      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a"
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
     }
   },
   "community_uuid": "2b44a715-e677-4489-9803-19c8e7929f85"

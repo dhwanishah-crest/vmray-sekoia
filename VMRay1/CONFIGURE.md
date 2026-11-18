@@ -38,4 +38,4 @@ Look up file hashes in VMRay, detonate URLs or scan files from a Sekoia.io playb
     - then `Render Report` and the Sekoia.io `Comment Alert` action to post the report on the alert, with a `Foreach` over `screenshot_comments` for the screenshots,
     - and `Extract IOCs` with the Sekoia.io `Add IOC to IOC Collection` action to push the indicators, with a `Foreach` over `indicator_groups`.
 
-Ready-made playbooks are in `playbooks/templates/`: "VMRay1: Scan file from URL", run by an analyst on an alert, and "Alert Created - Demo Defend VMRay1", which scans the file of a SentinelOne threat. After creating a playbook from one, select your VMRay1 account on the VMRay1 nodes and set the IOC collection on `Add IOCs to IOC Collection`. Every file submitted consumes quota.
+Ready-made playbooks are in `playbooks/templates/`: "VMRay1: Scan file from URL", run by an analyst on an alert, and "VMRay1: Alert Created - Scan SentinelOne file", which scans the file of a SentinelOne threat. After creating a playbook from one, select your VMRay1 account on the VMRay1 nodes and set the IOC collection on `Add IOCs to IOC Collection`. Every file submitted consumes quota.

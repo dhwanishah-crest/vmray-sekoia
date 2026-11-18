@@ -15,6 +15,6 @@ VMRay1 integration for Sekoia.io: a Sekoia automation module and the playbooks t
 | File | What it is |
 |---|---|
 | `playbooks/templates/vmray1_scan_file_from_url.json` | "VMRay1: Scan file from URL" — Manual trigger. Downloads a file from a URL and scans it; use it to test the module. |
-| `playbooks/templates/vmray1_sentinelone_demo.json` | "Alert Created - Demo Defend VMRay1" — Alert Created trigger. SentinelOne fetches the threat's file from the endpoint and VMRay scans it. Carries this tenant's trigger and SentinelOne account IDs. |
+| `playbooks/templates/vmray1_sentinelone_demo.json` | "VMRay1: Alert Created - Scan SentinelOne file" — Alert Created trigger. SentinelOne fetches the threat's file from the endpoint and VMRay scans it. Carries this tenant's trigger and SentinelOne account IDs. |
 
 Select your VMRay1 account on the VMRay1 nodes and set a real `ioc_collection_id` after importing either one.

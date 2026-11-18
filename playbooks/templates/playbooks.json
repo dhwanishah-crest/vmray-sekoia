@@ -1,7 +1,7 @@
 [
   {
     "file": "vmray1_sentinelone_demo.json",
-    "name": "Alert Created - Demo Defend VMRay1",
+    "name": "VMRay1: Alert Created - Scan SentinelOne file",
     "tags": [
       "Alerts",
       "Enrichment",
