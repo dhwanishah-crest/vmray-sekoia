@@ -1,0 +1,70 @@
+{
+  "name": "Get Samples By Hash",
+  "slug": "get_samples_by_hash",
+  "description": "Look up SHA256/SHA1/MD5 hashes in VMRay's existing analyses and return every matching sample \u2014 costs no quota.",
+  "uuid": "4d76e52d-fa54-4e6f-9ff7-ad075f423de9",
+  "docker_parameters": "GetSamplesByHash",
+  "arguments": {
+    "properties": {
+      "hashes": {
+        "description": "List of SHA256, SHA1 or MD5 file hashes to look up in VMRay \u2014 e.g. the hashes extracted from the alert's events. Duplicates are ignored; no quota is used.",
+        "items": {
+          "type": "string"
+        },
+        "title": "File hashes",
+        "type": "array"
+      }
+    },
+    "required": [
+      "hashes"
+    ],
+    "title": "GetSamplesByHashArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "found": {
+        "title": "Found",
+        "type": "boolean"
+      },
+      "sample_ids": {
+        "description": "Distinct VMRay sample_ids matched.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "samples": {
+        "description": "The matched sample objects as VMRay returns them from the lookup (verdict, score, hashes, threat names, classifications, report link) \u2014 no VTIs/IOCs/MITRE ATT&CK, those need a separate fetch.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Samples",
+        "type": "array"
+      },
+      "not_found": {
+        "description": "Hashes VMRay has never analysed.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Not Found",
+        "type": "array"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Per-hash failures (invalid hash or lookup error).",
+        "title": "Errors",
+        "type": "object"
+      }
+    },
+    "required": [
+      "found"
+    ],
+    "title": "GetSamplesByHashResults",
+    "type": "object"
+  }
+}

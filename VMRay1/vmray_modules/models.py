@@ -165,6 +165,19 @@ SubmitTimeout = Annotated[
 ]
 
 
+class SubmitUrlSampleArguments(SubmissionOptions):
+    sample_url: str = Field(..., min_length=1, description="URL to submit for detonation.")
+    reanalyze: Reanalyze
+    tags: Tags
+    query_retry_wait: QueryRetryWait
+    timeout: SubmitTimeout
+
+    @field_validator("sample_url", mode="before")
+    @classmethod
+    def _strip(cls, value: Any) -> Any:
+        return value.strip() if isinstance(value, str) else value
+
+
 class SubmissionResults(BaseModel):
     submissions: list[Submission] = Field(default_factory=list, description="Finished submissions.")
     submission_ids: list[int] = Field(
@@ -191,6 +204,10 @@ class SubmissionResults(BaseModel):
     errors: list[dict[str, Any]] = Field(
         default_factory=list, description="Errors VMRay returned on submit, and why a submission failed."
     )
+
+
+class SubmitUrlSampleResults(SubmissionResults):
+    pass
 
 
 # --------------------------------------------------------------------------
@@ -241,6 +258,47 @@ class SubmitFileSampleResults(SubmissionResults):
         default_factory=list,
         title="Submitted Files",
         description="Files VMRay accepted. A file that could not be read or was refused is in `errors`.",
+    )
+
+
+# --------------------------------------------------------------------------
+# GetSamplesByHash — lookup only; building the full report is a separate action
+# --------------------------------------------------------------------------
+
+
+class GetSamplesByHashArguments(BaseModel):
+    hashes: list[str] = Field(
+        ...,
+        title="File hashes",
+        description="List of SHA256, SHA1 or MD5 file hashes to look up in VMRay — e.g. the hashes extracted from "
+        "the alert's events. Duplicates are ignored; no quota is used.",
+    )
+
+    @field_validator("hashes", mode="before")
+    @classmethod
+    def _one_or_many(cls, value: Any) -> Any:
+        """A single hash is accepted as a one-item list, and empty values — what a playbook template yields for
+        an event without that hash field — are dropped instead of failing the action."""
+        if isinstance(value, str):
+            value = [value]
+        if isinstance(value, list):
+            return [str(h) for h in value if h is not None and str(h).strip()]
+        return value
+
+
+class GetSamplesByHashResults(BaseModel):
+    found: bool
+    sample_ids: list[int] = Field(
+        default_factory=list, title="Sample IDs", description="Distinct VMRay sample_ids matched."
+    )
+    samples: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="The matched sample objects as VMRay returns them from the lookup (verdict, score, hashes, "
+        "threat names, classifications, report link) — no VTIs/IOCs/MITRE ATT&CK, those need a separate fetch.",
+    )
+    not_found: list[str] = Field(default_factory=list, description="Hashes VMRay has never analysed.")
+    errors: dict[str, str] = Field(
+        default_factory=dict, description="Per-hash failures (invalid hash or lookup error)."
     )
 
 

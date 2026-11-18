@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release of VMRay1, a standalone copy of the VMRay module that installs next to it, focused on scanning files
+- Get Samples By Hash action: look up SHA256, SHA1 or MD5 hashes in VMRay's existing analyses, at no quota cost
+- Submit URL Sample action: submit a URL to VMRay and wait until every resulting submission has finished, with a timeout
 - Download File action: download a file from an http(s) URL into the playbook run's storage, public hosts only, with a size limit
 - Submit File Sample action: submit files from the playbook run's storage (e.g. malware SentinelOne's Get malwares from threat fetched from an endpoint, or a Download File result) to VMRay and wait until their analyses finish, with a timeout
 - Build Report action: build the full VMRay report for sample IDs or submission IDs, including child samples and screenshots

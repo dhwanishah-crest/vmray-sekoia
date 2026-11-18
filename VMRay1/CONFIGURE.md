@@ -1,11 +1,11 @@
 ## Configuration
 
-Scan files in VMRay from a Sekoia.io playbook, post the full VMRay report on the alert as a comment (with screenshots), and push the indicators found to a Sekoia.io IOC collection.
+Look up file hashes in VMRay, detonate URLs or scan files from a Sekoia.io playbook, post the full VMRay report on the alert as a comment (with screenshots), and push the indicators found to a Sekoia.io IOC collection.
 
 ### Requirements
 
 - A VMRay Platform account, cloud (e.g. `https://eu.cloud.vmray.com`, `https://us.cloud.vmray.com`) or on-premises, running VMRay Platform **2026.2 or later**. On older versions, the recursive threat names and classifications of child samples are missing from the report.
-- A VMRay plan that allows submissions: VMRay rejects submissions on the DeepResponse plan. Every file submitted consumes quota.
+- To detonate URLs or files (`Submit URL Sample`, `Submit File Sample`), a VMRay plan that allows submissions: VMRay rejects submissions on the DeepResponse plan. Looking up hashes works on every plan and consumes no quota; every URL or file detonation consumes quota.
 
 ### In VMRay: Create an API key
 
@@ -31,9 +31,10 @@ Scan files in VMRay from a Sekoia.io playbook, post the full VMRay report on the
 
 8. Open or create a playbook, add the VMRay1 actions, and select the VMRay1 account you just connected in each one's `Account` tab. A typical chain:
 
+    - `Get Samples By Hash` (file hashes of the alert) or `Submit URL Sample` (a URL of the alert), or
     - `Download File` (a URL) or an EDR action such as SentinelOne's `Get malwares from threat`, which put the file in the run's storage,
     - `Submit File Sample` with their `files`,
-    - then `Build Report` with the `submission_ids` it returns,
+    - then `Build Report` with the `sample_ids` or `submission_ids` they return,
     - then `Render Report` and the Sekoia.io `Comment Alert` action to post the report on the alert, with a `Foreach` over `screenshot_comments` for the screenshots,
     - and `Extract IOCs` with the Sekoia.io `Add IOC to IOC Collection` action to push the indicators, with a `Foreach` over `indicator_groups`.
 

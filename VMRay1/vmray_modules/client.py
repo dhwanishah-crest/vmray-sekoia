@@ -15,6 +15,7 @@ Endpoint paths and response shapes follow the VMRay Platform REST API OpenAPI
 spec, v2026.2.1.
 """
 
+import re
 from typing import Any
 
 from requests import RequestException, Response, sessions
@@ -52,6 +53,21 @@ class BadResponseError(VMRayClientError):
     def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
+
+
+class UnknownHashTypeError(VMRayClientError):
+    """A value that is not an md5 (32), sha1 (40) or sha256 (64) hex hash."""
+
+
+_HASH_TYPES = {32: "md5", 40: "sha1", 64: "sha256"}
+_HEX = re.compile(r"[0-9a-fA-F]+")
+
+
+def _hash_type(value: str) -> str:
+    """The hash type of a hex hash. Anything else is refused before it reaches the URL path."""
+    if len(value) in _HASH_TYPES and _HEX.fullmatch(value):
+        return _HASH_TYPES[len(value)]
+    raise UnknownHashTypeError(f"'{value}' is not a valid md5/sha1/sha256 hex hash.")
 
 
 class VMRayConnectionError(VMRayClientError):
@@ -98,6 +114,7 @@ class VMRayClient:
 
     # -- endpoint paths, one place, matching the OpenAPI spec verbatim -----
     _submit = "/rest/sample/submit"
+    _sample_by_hash = "/rest/sample/{hash_type}/{hash_value}"
     _submission = "/rest/submission/{submission_id}"
     _sample = "/rest/sample/{sample_id}"
     _sample_vtis = "/rest/sample/{sample_id}/vtis"
@@ -201,6 +218,26 @@ class VMRayClient:
 
     # -- submission -------------------------------------------------------
 
+    def submit_url_sample(
+        self,
+        sample_url: str,
+        tags: list[str] | None = None,
+        reanalyze: bool = False,
+        **extra_params: Any,
+    ) -> dict[str, Any]:
+        # analysis_caching is not sent: it takes 'disabled'/'enabled'/'smart'/'legacy', and left out the VMRay
+        # user's own setting applies
+        tags = [t.strip() for t in tags or [] if t and t.strip()]
+        params = _drop_none(
+            {
+                "sample_url": sample_url,
+                "reanalyze": True if reanalyze else None,  # left out when false
+                "tags": ",".join(tags) if tags else None,
+                **extra_params,
+            }
+        )
+        return self._check_response(self.session.post(self._url(self._submit), data=params))
+
     def submit_file_sample(
         self,
         file_name: str,
@@ -234,6 +271,14 @@ class VMRayClient:
 
     def get_sample(self, sample_id: int) -> dict[str, Any]:
         return self._check_response(self.session.get(self._url(self._sample.format(sample_id=sample_id))))
+
+    def get_samples_by_hash(self, sample_hash: str) -> list[dict[str, Any]]:
+        """Zero-quota lookup. Returns [] if VMRay has never analysed this hash."""
+        return self._check_response(
+            self.session.get(
+                self._url(self._sample_by_hash.format(hash_type=_hash_type(sample_hash), hash_value=sample_hash))
+            )
+        )
 
     def get_sample_threat_indicators(self, sample_id: int) -> dict[str, Any]:
         return self._check_response(self.session.get(self._url(self._sample_vtis.format(sample_id=sample_id))))
