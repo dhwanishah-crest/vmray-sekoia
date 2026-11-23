@@ -10,9 +10,8 @@ the full report (VTIs, IOCs, MITRE ATT&CK) is a separate action that takes
 either list of IDs.
 """
 
-from vmray_modules.client import VMRayClientError
 from vmray_modules.models import SubmitUrlSampleArguments, SubmitUrlSampleResults
-from vmray_modules.submit_helpers import SubmittingAction, submission_ids, submission_params, submit_errors
+from vmray_modules.submit_helpers import SubmittingAction, submit_url
 
 
 class SubmitUrlSample(SubmittingAction):
@@ -21,21 +20,8 @@ class SubmitUrlSample(SubmittingAction):
     results_model = SubmitUrlSampleResults
 
     def run(self, arguments: SubmitUrlSampleArguments) -> SubmitUrlSampleResults:
-        try:
-            response = self.client.submit_url_sample(
-                sample_url=arguments.sample_url,
-                tags=arguments.tags,
-                reanalyze=arguments.reanalyze,
-                **submission_params(arguments),
-            )
-        except VMRayClientError as exc:  # e.g. an invalid URL or no quota left, refused with an HTTP error
-            self.set_output("submission_failed", True)
-            return SubmitUrlSampleResults(errors=[{"error_msg": str(exc)}])
-
-        errors = submit_errors(response)
-        pending = submission_ids(response)
+        pending, errors = submit_url(self, arguments)
         if not pending:
-            # a 200 with no submission means VMRay rejected it — the reason is in `errors`
             self.set_output("submission_failed", True)
             return SubmitUrlSampleResults(errors=errors)
 

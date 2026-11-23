@@ -8,7 +8,7 @@
       "VMRay1"
     ],
     "workspace": "Operation Center",
-    "description": "On every new SentinelOne alert, fetch the threat's file from the endpoint, detonate it in VMRay1, post the report with screenshots as alert comments and push the IOCs to an IOC collection"
+    "description": "On every new SentinelOne alert, fetch the threat's file from the endpoint, start the VMRay analysis, check it after 2, 6 and 14 minutes, post the report with screenshots as alert comments, push the IOCs to an IOC collection and list the suspicious child samples"
   },
   {
     "file": "vmray1_sentinelone_manual_tmp.json",

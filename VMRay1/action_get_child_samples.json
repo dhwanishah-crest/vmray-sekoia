@@ -1,0 +1,185 @@
+{
+  "name": "Get Child Samples",
+  "slug": "get_child_samples",
+  "description": "List the child samples VMRay found inside a sample (files in an archive or email, files a URL downloaded, ...), with their verdict, hashes and VTI score \u2014 costs no quota.",
+  "uuid": "2da386a5-668f-4ade-b399-a6171f6d763b",
+  "docker_parameters": "GetChildSamples",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay ID of the parent sample \u2014 e.g. the `sample_ids` of Get Samples By Hash or Submit File Sample.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit File Sample. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      },
+      "max_depth": {
+        "default": 10,
+        "description": "How many levels of child samples to follow (at most 10): 1 lists only the direct children, 2 adds their children, and so on.",
+        "maximum": 10,
+        "minimum": 1,
+        "title": "Max depth",
+        "type": "integer"
+      },
+      "min_verdict": {
+        "default": "",
+        "description": "Only return children whose verdict is at least this severe. Allowed values: 'clean' (every child with a known verdict), 'suspicious' (suspicious and malicious) or 'malicious'. Leave empty to return every child. A child that does not match is left out of the list, but its own children are still searched. A value that is not one of these is an error.",
+        "title": "Minimum verdict",
+        "type": "string"
+      }
+    },
+    "title": "GetChildSamplesArguments",
+    "type": "object"
+  },
+  "results": {
+    "$defs": {
+      "ChildSample": {
+        "properties": {
+          "sample_id": {
+            "description": "VMRay sample ID of the child.",
+            "title": "Sample ID",
+            "type": "integer"
+          },
+          "parent_sample_id": {
+            "description": "The sample this child was found in (one level up).",
+            "title": "Parent Sample ID",
+            "type": "integer"
+          },
+          "depth": {
+            "description": "1 for a direct child of the sample asked for, 2 for a child of a child, ...",
+            "title": "Depth",
+            "type": "integer"
+          },
+          "name": {
+            "default": "",
+            "description": "The child's file name.",
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "default": "",
+            "description": "VMRay's file type of the child, e.g. 'Windows Exe (x86-64)'.",
+            "title": "Type",
+            "type": "string"
+          },
+          "md5": {
+            "default": "",
+            "title": "MD5",
+            "type": "string"
+          },
+          "sha1": {
+            "default": "",
+            "title": "SHA-1",
+            "type": "string"
+          },
+          "sha256": {
+            "default": "",
+            "title": "SHA-256",
+            "type": "string"
+          },
+          "verdict": {
+            "default": "",
+            "description": "VMRay's verdict for the child, e.g. 'malicious'. Empty if unknown.",
+            "title": "Verdict",
+            "type": "string"
+          },
+          "verdict_reason": {
+            "default": "",
+            "description": "Why VMRay gave that verdict.",
+            "title": "Verdict Reason",
+            "type": "string"
+          },
+          "vti_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "VMRay Threat Identifier score, 0-100.",
+            "title": "VTI score"
+          },
+          "webif_url": {
+            "default": "",
+            "description": "The child's page in the VMRay console.",
+            "title": "Web link",
+            "type": "string"
+          },
+          "child_count": {
+            "default": 0,
+            "description": "How many samples VMRay found inside this child.",
+            "title": "Child Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sample_id",
+          "parent_sample_id",
+          "depth"
+        ],
+        "title": "ChildSample",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "has_children": {
+        "description": "True when at least one child matches (after `min_verdict`).",
+        "title": "Has Children",
+        "type": "boolean"
+      },
+      "sample_id": {
+        "description": "The parent sample the children were looked up for.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "child_count": {
+        "default": 0,
+        "description": "How many children are listed (after `min_verdict`).",
+        "title": "Child Count",
+        "type": "integer"
+      },
+      "total_child_count": {
+        "default": 0,
+        "description": "How many children were found in the tree before `min_verdict` was applied.",
+        "title": "Total Child Count",
+        "type": "integer"
+      },
+      "sample_ids": {
+        "description": "The listed children's sample IDs \u2014 input for Build Report.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "children": {
+        "description": "The children, nearest levels first, each with its parent and depth.",
+        "items": {
+          "$ref": "#/$defs/ChildSample"
+        },
+        "title": "Children",
+        "type": "array"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Children that could not be read, by `child_sample:<id>`.",
+        "title": "Errors",
+        "type": "object"
+      }
+    },
+    "required": [
+      "has_children",
+      "sample_id"
+    ],
+    "title": "GetChildSamplesResults",
+    "type": "object"
+  }
+}

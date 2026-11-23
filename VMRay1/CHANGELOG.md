@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-11-23 - 1.1.0
+
+### Added
+- Start File Submission and Start URL Submission actions: submit like Submit File Sample and Submit URL Sample but return at once with the submission IDs, without waiting for the analysis
+- SentinelOne playbooks: Start File Submission, then Wait and Check Submission Status (after 2, 6 and 14 minutes) instead of one long-running Submit File Sample, plus a Get Child Samples comment listing the suspicious or malicious files found inside the submitted file
+- Check Submission Status action: check once whether submissions have finished, with `completed` / `pending` / `failed` branches, for submissions started by any submit action
+- Get Child Samples action: list the child samples VMRay found inside a sample, with parent, depth, hashes, verdict, VTI score and link; `max_depth` and `min_verdict` options and a `has_children` / `no_children` branch
+- Get Sample Relations action: list the relation records VMRay keeps for a sample or a submission
+- Get Child Sample Report action: build the full report of one child sample, checked to belong to its parent
+
 ## 2026-11-17 - 1.0.1
 
 ### Added

@@ -1,0 +1,200 @@
+{
+  "name": "Check Submission Status",
+  "slug": "check_submission_status",
+  "description": "Check once whether VMRay submissions have finished (no waiting, no quota): completed, still pending, or failed.",
+  "uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+  "docker_parameters": "CheckSubmissionStatus",
+  "arguments": {
+    "properties": {
+      "submission_ids": {
+        "description": "VMRay submission IDs to check \u2014 e.g. the `submission_ids` of Start File Submission or Start URL Submission. One poll is made for each; the action does not wait.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Submission IDs",
+        "type": "array"
+      }
+    },
+    "required": [
+      "submission_ids"
+    ],
+    "title": "CheckSubmissionStatusArguments",
+    "type": "object"
+  },
+  "results": {
+    "$defs": {
+      "Submission": {
+        "additionalProperties": true,
+        "description": "One submission object, as GET /submission/{id} returns it once finished.",
+        "properties": {
+          "submission_id": {
+            "title": "Submission ID",
+            "type": "integer"
+          },
+          "submission_sample_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Sample ID"
+          },
+          "submission_finished": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Finished"
+          },
+          "submission_has_errors": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Has Errors"
+          },
+          "submission_verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Verdict"
+          },
+          "submission_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Score"
+          },
+          "submission_original_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Original URL"
+          },
+          "submission_consumed_quota": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Consumed Quota"
+          },
+          "submission_webif_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Submission Webif URL"
+          }
+        },
+        "required": [
+          "submission_id"
+        ],
+        "title": "Submission",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "all_finished": {
+        "description": "True when no submission is still running.",
+        "title": "All Finished",
+        "type": "boolean"
+      },
+      "submissions": {
+        "description": "Submissions that finished without error.",
+        "items": {
+          "$ref": "#/$defs/Submission"
+        },
+        "title": "Submissions",
+        "type": "array"
+      },
+      "submission_ids": {
+        "description": "IDs of the submissions that finished without error \u2014 input for Build Report.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Submission IDs",
+        "type": "array"
+      },
+      "sample_ids": {
+        "description": "Distinct sample_ids of the submissions that finished without error.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "pending_submission_ids": {
+        "description": "Submissions still running, or that could not be checked this time.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Pending Submission IDs",
+        "type": "array"
+      },
+      "failed_submission_ids": {
+        "description": "Submissions that finished with an error.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Failed Submission IDs",
+        "type": "array"
+      },
+      "errors": {
+        "description": "Why a submission failed, or could not be checked.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Errors",
+        "type": "array"
+      }
+    },
+    "required": [
+      "all_finished"
+    ],
+    "title": "CheckSubmissionStatusResults",
+    "type": "object"
+  }
+}

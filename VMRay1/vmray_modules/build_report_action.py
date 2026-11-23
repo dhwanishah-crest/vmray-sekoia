@@ -231,6 +231,36 @@ def build_sample_node(
     sample["errors"] = errors
 
 
+def write_report(
+    action: VMRayAction, sample_ids: list[int | None], arguments: BuildReportArguments, errors: dict[str, str]
+) -> BuildReportResults:
+    """Build the report of each sample (each once), write it to a JSON file on the data path and return only
+    the file's name. `errors` holds what already went wrong before this point; the rest is added here."""
+    samples: list[ReportSample] = []
+    for sample_id in dict.fromkeys(i for i in sample_ids if i is not None):
+        try:
+            sample = action.client.get_sample(sample_id)
+        except _RECOVERABLE as exc:
+            errors[str(sample_id)] = _describe(exc)
+            continue
+        if not isinstance(sample, dict) or "sample_id" not in sample:
+            errors[str(sample_id)] = "unexpected response from VMRay"
+            continue
+        build_sample_node(action.client, sample, 0, arguments)
+        try:  # one sample VMRay describes oddly must not cost the others
+            samples.append(ReportSample.model_validate(sample))
+        except ValidationError as exc:
+            errors[str(sample_id)] = f"unexpected sample data from VMRay: {exc.error_count()} invalid field(s)"
+
+    report = Report(samples=samples, errors=errors)
+    filename = f"vmray-report-{uuid.uuid4()}.json"
+    action.data_path.joinpath(filename).write_bytes(_dump(report.model_dump(mode="json")))
+
+    return BuildReportResults(
+        report_path=filename, sample_ids=[s.sample_id for s in report.samples], errors=report.errors
+    )
+
+
 class BuildReport(VMRayAction):
     name = "Build Report"
     description = (
@@ -266,29 +296,7 @@ class BuildReport(VMRayAction):
         else:
             raise MissingActionArgumentError("sample_ids or submission_ids")
 
-        samples: list[ReportSample] = []
-        for sample_id in dict.fromkeys(i for i in sample_ids if i is not None):
-            try:
-                sample = self.client.get_sample(sample_id)
-            except _RECOVERABLE as exc:
-                errors[str(sample_id)] = _describe(exc)
-                continue
-            if not isinstance(sample, dict) or "sample_id" not in sample:
-                errors[str(sample_id)] = "unexpected response from VMRay"
-                continue
-            build_sample_node(self.client, sample, 0, arguments)
-            try:  # one sample VMRay describes oddly must not cost the others
-                samples.append(ReportSample.model_validate(sample))
-            except ValidationError as exc:
-                errors[str(sample_id)] = f"unexpected sample data from VMRay: {exc.error_count()} invalid field(s)"
-
-        report = Report(samples=samples, errors=errors)
-        filename = f"vmray-report-{uuid.uuid4()}.json"
-        self.data_path.joinpath(filename).write_bytes(_dump(report.model_dump(mode="json")))
-
-        return BuildReportResults(
-            report_path=filename, sample_ids=[s.sample_id for s in report.samples], errors=report.errors
-        )
+        return write_report(self, sample_ids, arguments, errors)
 
 
 def _dump(data: dict[str, Any]) -> bytes:

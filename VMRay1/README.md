@@ -35,6 +35,47 @@ Looks up SHA256, SHA1 or MD5 hashes in VMRay's existing analyses and returns eve
 
 **Outputs:** `found` (at least one sample) / `not_found` (none). **Results:** `sample_ids`, `samples`, `not_found` (hashes VMRay has never analysed), `errors` (per hash: invalid value or lookup failure).
 
+### `GetChildSamples` - Get Child Samples
+
+Lists the samples VMRay found inside a sample: the files of an archive, the attachments and links of an email, the files a URL downloaded. VMRay analyzes each of them as a sample of its own, so each has its own verdict and may have children of its own. Starts from a sample (or the sample of a submission) and follows `sample_child_sample_ids` one `GET /sample/{id}` per child. Costs no quota.
+
+| Argument | Default | Notes |
+|---|---|---|
+| `sample_id` (Sample ID) | | the parent sample, e.g. `sample_ids` of Get Samples By Hash |
+| `submission_id` (Submission ID) | | resolved to its sample; used when `sample_id` is empty. One of the two is required |
+| `max_depth` (Max depth) | `10` | levels of children to follow, 1 to 10: 1 lists only the direct children |
+| `min_verdict` (Minimum verdict) | empty | `clean` (every child with a known verdict), `suspicious` (suspicious and malicious) or `malicious`; empty lists every child. Any other value is an error |
+
+A child that `min_verdict` leaves out is still searched for children of its own: a clean archive can hold a malicious file. A sample is listed once, however many parents name it.
+
+**Outputs:** `has_children` (at least one child is listed) / `no_children`, so a playbook can skip the rest. **Results:** `children` (nearest levels first; each has `sample_id`, `parent_sample_id`, `depth`, `name`, `type`, `md5`, `sha1`, `sha256`, `verdict`, `verdict_reason`, `vti_score`, `webif_url`, `child_count`), `sample_ids` (input for Build Report), `child_count`, `total_child_count` (before `min_verdict`), `sample_id` (the parent), `errors` (a child VMRay could not return, by `child_sample:<id>`).
+
+### `GetSampleRelations` - Get Sample Relations
+
+Lists the relation records VMRay keeps between a sample and the samples found inside it (`GET /rest/sample_relation/sample/{id}`, or `/submission/{id}`). The Console shows the relation type there (for example "Embedded File"). Costs no quota.
+
+| Argument | Default | Notes |
+|---|---|---|
+| `sample_id` (Sample ID) | | the relations that involve this sample |
+| `submission_id` (Submission ID) | | the relations created by this submission; used when `sample_id` is empty. One of the two is required |
+
+**Outputs:** `found` (VMRay returned at least one relation) / `not_found`. **Results:** `relations` (the records exactly as VMRay sends them), `relation_count`, `related_sample_ids` (every other sample named by a `*sample_id` field of the records).
+
+VMRay's API reference lists these endpoints but not the fields of a record, so the records are passed through untouched and only `related_sample_ids` reads them. Use `GetChildSamples` for a tree of children with verdicts; use this for the relation type.
+
+### `GetChildSampleReport` - Get Child Sample Report
+
+Builds the full report of one child sample, the same report `BuildReport` writes (analyses, VTIs, MITRE ATT&CK, IOCs, classifications, threat names, screenshots, then the child's own children). `BuildReport` given the child's `sample_id` does the same; this action adds the check that the child belongs to the parent, so a wrong ID fails instead of reporting on an unrelated sample.
+
+| Argument | Default | Notes |
+|---|---|---|
+| `parent_sample_id` | required | the sample the child was found in, e.g. `sample_id` of Get Child Samples |
+| `child_sample_id` | required | the child to report on, e.g. one of the `sample_ids` of Get Child Samples; it must be in the parent's tree (up to 10 levels) |
+| `max_recursion_depth` | `10` | how deep the child's own children are built, at most 10; `0` disables recursion |
+| `ioc_severity_filter`, `analysis_verdict_filter`, `include_screenshots` | as in Build Report | |
+
+**Results:** `report_path`, `sample_ids`, `errors`, as for Build Report, so `RenderReport` and `ExtractIocs` take it unchanged.
+
 ### `SubmitUrlSample` - Submit URL Sample
 
 Submits a URL and polls every resulting submission until it finishes.
@@ -72,6 +113,31 @@ Uploads files from the playbook run's storage (`POST /sample/submit` with `sampl
 Each file is submitted on its own and sent under its storage-path name; VMRay detects its type from the content. A path outside the storage (absolute, or with `..`), a missing or empty file, and a file VMRay refuses are listed in `errors` with their `file`, and the other files still go through. No archive settings: the files arrive already extracted.
 
 **Outputs:** `completed` / `timed_out` / `submission_failed` (no file could be submitted, or every submission failed). **Results:** `submission_ids`, `sample_ids`, `submissions`, `pending_submission_ids` (still running at the timeout), `failed_submission_ids`, `timed_out`, `errors`, `submitted_files`.
+
+### `StartFileSubmission` / `StartUrlSubmission` - Start File Submission, Start URL Submission
+
+The same upload as `SubmitFileSample` and `SubmitUrlSample`, but they **return at once** instead of waiting for the analysis. They take the same inputs as those two, without `query_retry_wait` and `timeout` (there is nothing to wait for), and send the same form to VMRay. Each file is still submitted on its own, so a file that cannot be read or that VMRay refuses is listed in `errors` while the others go through. Consumes quota, like the waiting actions.
+
+**Outputs:** `submitted` (VMRay started at least one submission) / `submission_failed`. **Results:** `submission_ids` (started, not finished: input for `CheckSubmissionStatus`), `submitted` (bool), `errors`, and for files `submitted_files`.
+
+### `CheckSubmissionStatus` - Check Submission Status
+
+One look at whether submissions have finished: a single `GET /submission/{id}` for each ID, with no waiting and no loop. Takes the `submission_ids` of either Start action, or of `SubmitFileSample` / `SubmitUrlSample`. Costs no quota.
+
+| Argument | Default | Notes |
+|---|---|---|
+| `submission_ids` | required | one ID or a list; duplicates are checked once |
+
+**Outputs:**
+- `completed`: nothing is running and at least one submission finished without error. `submission_ids` and `sample_ids` are ready for `BuildReport`.
+- `pending`: at least one is still running, or could not be checked this time (`errors` says why). The submissions that already finished are in the results too.
+- `failed`: every submission finished with an error.
+
+**Results:** `all_finished`, `submissions`, `submission_ids` and `sample_ids` (finished without error), `pending_submission_ids`, `failed_submission_ids`, `errors`.
+
+A submission that cannot be checked stays pending instead of failing, because the next check may work. When not one of them could be checked (a wrong API key, VMRay down) the action fails, so a playbook never reads "pending" when nothing was looked at.
+
+**Using them in a playbook.** Sekoia has no loop that waits, but its Utils module has a `Wait` action (`duration` in seconds, up to 3600). A chain that does not hold one run open for the whole analysis: `Start File Submission` → `Wait` (say 120 s) → `Check Submission Status` → `completed` goes on to `Build Report`; `pending` goes to another `Wait` → `Check Submission Status`, repeated a fixed number of times, then a comment that the analysis is still running. `SubmitFileSample` / `SubmitUrlSample` remain the simpler choice when a playbook run may stay open until the analysis finishes (up to the `timeout`, 30 minutes by default).
 
 ### `BuildReport` - Build Report
 
@@ -153,7 +219,7 @@ Extracts a report's IOCs as indicators for Sekoia's "Add IOC to IOC Collection" 
 | `vmray1_sentinelone_manual_tmp.json` | Manual - an analyst runs it on an alert | Same steps as the Alert Created one, for testing: run it on an alert whose first event carries a SentinelOne threat ID |
 | `vmray1_sentinelone_demo.json` | Alert Created | Fetches a SentinelOne threat's file from the endpoint and scans it |
 
-Both end the same way: `BuildReport` → `RenderReport` → Comment Alert, then the screenshot comments and the IOC push. When the analysis times out or fails, a comment says so and lists the submissions still running. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
+Both work the same way. SentinelOne fetches the file, `StartFileSubmission` starts the analysis and returns at once, and the playbook then checks it with `Wait` + `CheckSubmissionStatus` after 2, 6 and 14 minutes (120 s, then 240 s, then 480 s), so no run stays open for the whole analysis. `completed` goes on to `BuildReport` → `RenderReport` → Comment Alert, then the screenshot comments and the IOC push. A `Get Child Samples` branch (suspicious or worse, up to 10 levels) also posts a comment listing the dangerous files VMRay found inside the submitted file. When VMRay refuses the file, finishes with an error, or is still analysing at the third check, a comment says so with the submission IDs. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
 
 **After creating a playbook from a template:** select your VMRay1 account on the VMRay1 nodes, and set `ioc_collection_id` on "Add IOCs to IOC Collection". For the SentinelOne one, also select your SentinelOne account (its API user needs the permission to fetch threat files, and the endpoint's agent must be online) and consider limiting the trigger to SentinelOne rules: every file submitted consumes quota.
 

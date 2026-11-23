@@ -1,0 +1,88 @@
+{
+  "name": "Get Child Sample Report",
+  "slug": "get_child_sample_report",
+  "description": "Build the full VMRay report of one child sample of a parent sample: analyses, VTIs, MITRE ATT&CK, IOCs, classifications, threat names and screenshots. Fails if the sample is not a child of the parent.",
+  "uuid": "c15aed02-443e-43ac-97eb-acb92deadd53",
+  "docker_parameters": "GetChildSampleReport",
+  "arguments": {
+    "properties": {
+      "parent_sample_id": {
+        "description": "VMRay ID of the sample the child was found in \u2014 e.g. `sample_id` of Get Child Samples.",
+        "title": "Parent Sample ID",
+        "type": "integer"
+      },
+      "child_sample_id": {
+        "description": "VMRay ID of the child to build the report for \u2014 e.g. one of the `sample_ids` of Get Child Samples. It must be somewhere in the parent's child tree (up to 10 levels), else the action fails.",
+        "title": "Child Sample ID",
+        "type": "integer"
+      },
+      "max_recursion_depth": {
+        "default": 10,
+        "description": "The maximum depth of recursive samples of the child which will be analyzed in the report (at most 10). 0 disables recursion.",
+        "maximum": 10,
+        "minimum": 0,
+        "title": "Max Recursion Depth",
+        "type": "integer"
+      },
+      "ioc_severity_filter": {
+        "description": "Restrict which IOC severities are fetched from VMRay. Allowed values: 'malicious', 'suspicious'. Add exactly one to filter server-side; leave empty (or add both) to fetch both severities. A list with no valid value is an error.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Ioc Severity Filter",
+        "type": "array"
+      },
+      "analysis_verdict_filter": {
+        "description": "Analysis verdicts to include in the report. Allowed values: 'malicious', 'suspicious', 'clean'. Leave empty to include all analyses, including those with an unknown verdict. A list with no valid value is an error.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Analysis Verdict Filter",
+        "type": "array"
+      },
+      "include_screenshots": {
+        "default": true,
+        "description": "If set to true, the report includes the screenshots of the child sample.",
+        "title": "Include Screenshots",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "parent_sample_id",
+      "child_sample_id"
+    ],
+    "title": "GetChildSampleReportArguments",
+    "type": "object"
+  },
+  "results": {
+    "description": "Only a summary travels inline. The report itself \u2014 screenshots included \u2014 can be megabytes, far over\nSekoia's limit on action arguments (SYM216), so it is written to data_path and passed on as a file.",
+    "properties": {
+      "report_path": {
+        "description": "Path (relative to data_path) of the full report JSON \u2014 give it to Render Report and Extract IOCs as `report_path`.",
+        "title": "Report Path",
+        "type": "string"
+      },
+      "sample_ids": {
+        "description": "Samples in the report.",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Sample IDs",
+        "type": "array"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Samples that could not be fetched at all, keyed by sample_id \u2014 or by 'submission:<id>' when the submission itself could not be resolved to a sample.",
+        "title": "Errors",
+        "type": "object"
+      }
+    },
+    "required": [
+      "report_path"
+    ],
+    "title": "BuildReportResults",
+    "type": "object"
+  }
+}

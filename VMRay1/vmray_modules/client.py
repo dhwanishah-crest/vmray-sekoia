@@ -126,6 +126,8 @@ class VMRayClient:
     _sample_submissions = "/rest/submission/sample/{sample_id}"
     _submission_analyses = "/rest/analysis/submission/{submission_id}"
     _analysis_archive = "/rest/analysis/{analysis_id}/archive/{archive_path}"
+    _sample_relations_of_sample = "/rest/sample_relation/sample/{sample_id}"
+    _sample_relations_of_submission = "/rest/sample_relation/submission/{submission_id}"
     _continuation = "/rest/continuation/{continuation_id}"
 
     def __init__(
@@ -279,6 +281,22 @@ class VMRayClient:
                 self._url(self._sample_by_hash.format(hash_type=_hash_type(sample_hash), hash_value=sample_hash))
             )
         )
+
+    def get_sample_relations(
+        self, sample_id: int | None = None, submission_id: int | None = None
+    ) -> list[dict[str, Any]]:
+        """The relation records (how samples found inside another sample link to it) of one sample, or of
+        one submission when no sample is given. The records come back as VMRay sends them."""
+        if sample_id is not None:
+            path = self._sample_relations_of_sample.format(sample_id=sample_id)
+        elif submission_id is not None:
+            path = self._sample_relations_of_submission.format(submission_id=submission_id)
+        else:
+            raise ValueError("sample_id or submission_id is required")
+        data = self._check_response(self.session.get(self._url(path)))
+        if isinstance(data, dict):  # a single record is not wrapped in a list
+            return [data]
+        return [r for r in data if isinstance(r, dict)] if isinstance(data, list) else []
 
     def get_sample_threat_indicators(self, sample_id: int) -> dict[str, Any]:
         return self._check_response(self.session.get(self._url(self._sample_vtis.format(sample_id=sample_id))))

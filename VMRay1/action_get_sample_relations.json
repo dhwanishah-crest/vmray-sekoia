@@ -1,0 +1,59 @@
+{
+  "name": "Get Sample Relations",
+  "slug": "get_sample_relations",
+  "description": "List the relation records VMRay holds for a sample or a submission \u2014 how the samples found inside it (embedded files, downloaded files, ...) are linked to it. Costs no quota.",
+  "uuid": "c8125525-77dd-438c-8927-b5417da83a2e",
+  "docker_parameters": "GetSampleRelations",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay sample ID: the relations that involve this sample are returned (GET /rest/sample_relation/sample/{id}).",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID: the relations created by this submission are returned (GET /rest/sample_relation/submission/{id}). Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      }
+    },
+    "title": "GetSampleRelationsArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "found": {
+        "description": "True when VMRay returned at least one relation.",
+        "title": "Found",
+        "type": "boolean"
+      },
+      "relation_count": {
+        "default": 0,
+        "title": "Relation Count",
+        "type": "integer"
+      },
+      "relations": {
+        "description": "The relation records exactly as VMRay returns them (relation type, the samples and the submission it links).",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Relations",
+        "type": "array"
+      },
+      "related_sample_ids": {
+        "description": "Every other sample named in the records, taken from their `*sample_id` fields (the sample asked for is left out).",
+        "items": {
+          "type": "integer"
+        },
+        "title": "Related sample IDs",
+        "type": "array"
+      }
+    },
+    "required": [
+      "found"
+    ],
+    "title": "GetSampleRelationsResults",
+    "type": "object"
+  }
+}

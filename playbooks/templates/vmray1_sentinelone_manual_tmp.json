@@ -138,17 +138,14 @@
       }
     },
     "6": {
-      "name": "VMRay: Submit File Sample",
+      "name": "VMRay: Start File Submission",
       "type": "action",
       "outputs": {
-        "completed": [
-          "8"
-        ],
-        "timed_out": [
-          "9"
+        "submitted": [
+          "19"
         ],
         "submission_failed": [
-          "9"
+          "25"
         ]
       },
       "position": {
@@ -159,7 +156,7 @@
         "files": "{{ node.4['files'] }}",
         "reanalyze": true
       },
-      "action_uuid": "8edeaf02-d2c1-46d0-991c-50290ddf6a2c",
+      "action_uuid": "0004db2a-af6e-4fd7-ba12-333600ea4afc",
       "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
       "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
     },
@@ -170,7 +167,7 @@
         "default": []
       },
       "position": {
-        "x": 2700,
+        "x": 3000,
         "y": 2916
       },
       "arguments": {
@@ -187,12 +184,13 @@
       "type": "action",
       "outputs": {
         "default": [
-          "10"
+          "10",
+          "26"
         ]
       },
       "position": {
         "x": 1800,
-        "y": 3152
+        "y": 3860
       },
       "arguments": {
         "submission_ids": "{{ node.6['submission_ids'] }}",
@@ -210,13 +208,13 @@
         "default": []
       },
       "position": {
-        "x": 2400,
-        "y": 3152
+        "x": 3000,
+        "y": 4096
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
         "author": "VMRay",
-        "content": "**VMRay: sandbox analysis incomplete** — the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}` did not return a report.{% if node.6['timed_out'] %}\n\nTimed out waiting: submission(s) {{ node.6['pending_submission_ids'] | join(', ') }} may still finish on VMRay.{% endif %}{% if node.6['failed_submission_ids'] %}\n\nFailed submission(s): {{ node.6['failed_submission_ids'] | join(', ') }}.{% endif %}{% if node.6['errors'] %}\n\nErrors:\n{% for e in node.6['errors'] %}\n- {% if e.get('file') %}file `{{ e.get('file') | string | replace('`', \"'\") }}`: {% elif e.get('submission_id') %}submission {{ e.get('submission_id') }}: {% endif %}`{{ (e.get('error_msg') or 'unknown error') | string | replace('`', \"'\") | replace('\\n', ' ') }}`{% endfor %}{% endif %}"
+        "content": "**VMRay: sandbox analysis incomplete** — the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}` did not return a report: VMRay either finished the analysis with an error or was still analysing it at the last check.\n\nSubmission(s): {{ node.6['submission_ids'] | join(', ') }}. Open the submission in VMRay to follow it."
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
       "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
@@ -232,7 +230,7 @@
       },
       "position": {
         "x": 1800,
-        "y": 3388
+        "y": 4096
       },
       "arguments": {
         "report_path": "{{ node.8['report_path'] }}",
@@ -253,7 +251,7 @@
       },
       "position": {
         "x": 1800,
-        "y": 3624
+        "y": 4332
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
@@ -285,7 +283,7 @@
       "subtype": "condition",
       "position": {
         "x": 2100,
-        "y": 3860
+        "y": 4568
       }
     },
     "13": {
@@ -298,7 +296,7 @@
       },
       "position": {
         "x": 1800,
-        "y": 4096
+        "y": 4804
       },
       "arguments": {
         "report_path": "{{ node.8['report_path'] }}"
@@ -320,7 +318,7 @@
       "subtype": "foreach",
       "position": {
         "x": 2100,
-        "y": 4096
+        "y": 4804
       }
     },
     "15": {
@@ -331,7 +329,7 @@
       },
       "position": {
         "x": 2400,
-        "y": 4096
+        "y": 4804
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
@@ -363,7 +361,7 @@
       "subtype": "condition",
       "position": {
         "x": 1800,
-        "y": 4332
+        "y": 5040
       }
     },
     "17": {
@@ -379,7 +377,7 @@
       "subtype": "foreach",
       "position": {
         "x": 1800,
-        "y": 4568
+        "y": 5276
       }
     },
     "18": {
@@ -390,7 +388,7 @@
       },
       "position": {
         "x": 2100,
-        "y": 4568
+        "y": 5276
       },
       "arguments": {
         "valid_for": 30,
@@ -399,6 +397,219 @@
         "ioc_collection_id": "ioc-collection--8a88f80e-b58f-45e4-940d-ab0ecf9fe35b"
       },
       "action_uuid": "0acabc04-43b4-4564-b9b2-08b80e0e1ecf",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "19": {
+      "name": "Wait (first check)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "20"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 3152
+      },
+      "arguments": {
+        "duration": 120
+      },
+      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
+      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
+    },
+    "20": {
+      "name": "VMRay: Check Submission Status (1)",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "pending": [
+          "21"
+        ],
+        "failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 3388
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}"
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "21": {
+      "name": "Wait (second check)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "22"
+        ]
+      },
+      "position": {
+        "x": 2400,
+        "y": 3388
+      },
+      "arguments": {
+        "duration": 240
+      },
+      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
+      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
+    },
+    "22": {
+      "name": "VMRay: Check Submission Status (2)",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "pending": [
+          "23"
+        ],
+        "failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2400,
+        "y": 3624
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}"
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "23": {
+      "name": "Wait (third check)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "24"
+        ]
+      },
+      "position": {
+        "x": 2700,
+        "y": 3624
+      },
+      "arguments": {
+        "duration": 480
+      },
+      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
+      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
+    },
+    "24": {
+      "name": "VMRay: Check Submission Status (3)",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "pending": [
+          "9"
+        ],
+        "failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2700,
+        "y": 3860
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}"
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "25": {
+      "name": "Comment Alert (File Not Submitted)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2400,
+        "y": 3152
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: the file was not submitted** — VMRay accepted none of the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}`, so nothing was analysed.{% if node.6['errors'] %}\n\nErrors:\n{% for e in node.6['errors'] %}\n- {% if e.get('file') %}file `{{ e.get('file') | string | replace('`', \"'\") }}`: {% endif %}`{{ (e.get('error_msg') or 'unknown error') | string | replace('`', \"'\") | replace('\\n', ' ') }}`{% endfor %}{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "26": {
+      "name": "Report Has Sample?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ node.8['sample_ids'] | length }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "Build Report returned the submitted sample, whose child samples can be looked up"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "27"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 1500,
+        "y": 4096
+      }
+    },
+    "27": {
+      "name": "VMRay: Get Child Samples",
+      "type": "action",
+      "outputs": {
+        "has_children": [
+          "28"
+        ],
+        "no_children": []
+      },
+      "position": {
+        "x": 1500,
+        "y": 4332
+      },
+      "arguments": {
+        "sample_id": "{{ node.8['sample_ids'][0] }}",
+        "max_depth": 10,
+        "min_verdict": "suspicious"
+      },
+      "action_uuid": "2da386a5-668f-4ade-b399-a6171f6d763b",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "28": {
+      "name": "Comment Alert (Child Samples)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 1500,
+        "y": 4568
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: {{ node.27['child_count'] }} suspicious or malicious child sample(s)** found inside the submitted file ({{ node.27['total_child_count'] }} child sample(s) in total).\n\n{% for c in node.27['children'][:20] %}- **{{ c['verdict'] }}** `{{ c['name'] | string | replace('`', \"'\") }}` ({{ c['type'] }}, VTI {{ c['vti_score'] }}), sha256 `{{ c['sha256'] }}` — [View in VMRay]({{ c['webif_url'] }})\n{% endfor %}{% if node.27['child_count'] > 20 %}\nAnd {{ node.27['child_count'] - 20 }} more.{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
       "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
       "module_configuration_uuid": null
     }

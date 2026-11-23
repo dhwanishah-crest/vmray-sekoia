@@ -5,7 +5,13 @@ import pytest
 
 from vmray_modules.models import (
     BuildReportArguments,
+    CheckSubmissionStatusArguments,
+    GetChildSampleReportArguments,
+    GetChildSamplesArguments,
+    GetSampleRelationsArguments,
     GetSamplesByHashArguments,
+    StartFileSubmissionArguments,
+    StartUrlSubmissionArguments,
     SubmitFileSampleArguments,
     SubmitUrlSampleArguments,
 )
@@ -18,7 +24,13 @@ from vmray_modules.report_models import ExtractIocsArguments, RenderReportArgume
         SubmitFileSampleArguments,
         SubmitUrlSampleArguments,
         GetSamplesByHashArguments,
-            BuildReportArguments,
+        GetChildSamplesArguments,
+        GetSampleRelationsArguments,
+        GetChildSampleReportArguments,
+        StartFileSubmissionArguments,
+        StartUrlSubmissionArguments,
+        CheckSubmissionStatusArguments,
+        BuildReportArguments,
         RenderReportArguments,
         ExtractIocsArguments,
     ],

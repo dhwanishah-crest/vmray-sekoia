@@ -165,17 +165,20 @@ SubmitTimeout = Annotated[
 ]
 
 
-class SubmitUrlSampleArguments(SubmissionOptions):
+class StartUrlSubmissionArguments(SubmissionOptions):
     sample_url: str = Field(..., min_length=1, description="URL to submit for detonation.")
     reanalyze: Reanalyze
     tags: Tags
-    query_retry_wait: QueryRetryWait
-    timeout: SubmitTimeout
 
     @field_validator("sample_url", mode="before")
     @classmethod
     def _strip(cls, value: Any) -> Any:
         return value.strip() if isinstance(value, str) else value
+
+
+class SubmitUrlSampleArguments(StartUrlSubmissionArguments):
+    query_retry_wait: QueryRetryWait
+    timeout: SubmitTimeout
 
 
 class SubmissionResults(BaseModel):
@@ -215,7 +218,7 @@ class SubmitUrlSampleResults(SubmissionResults):
 # --------------------------------------------------------------------------
 
 
-class SubmitFileSampleArguments(SubmissionOptions):
+class StartFileSubmissionArguments(SubmissionOptions):
     files: list[str] = Field(
         ...,
         title="Files",
@@ -224,8 +227,6 @@ class SubmitFileSampleArguments(SubmissionOptions):
     )
     reanalyze: Reanalyze
     tags: Tags
-    query_retry_wait: QueryRetryWait
-    timeout: SubmitTimeout
 
     @field_validator("files", mode="before")
     @classmethod
@@ -253,11 +254,98 @@ class SubmitFileSampleArguments(SubmissionOptions):
         return value
 
 
+class SubmitFileSampleArguments(StartFileSubmissionArguments):
+    query_retry_wait: QueryRetryWait
+    timeout: SubmitTimeout
+
+
 class SubmitFileSampleResults(SubmissionResults):
     submitted_files: list[str] = Field(
         default_factory=list,
         title="Submitted Files",
         description="Files VMRay accepted. A file that could not be read or was refused is in `errors`.",
+    )
+
+
+# --------------------------------------------------------------------------
+# Start File / URL Submission and Check Submission Status — submit now, check later
+# --------------------------------------------------------------------------
+
+
+class StartSubmissionResults(BaseModel):
+    submitted: bool = Field(description="True when VMRay accepted at least one submission.")
+    submission_ids: list[int] = Field(
+        default_factory=list,
+        title="Submission IDs",
+        description="IDs of the submissions VMRay started. They are not finished yet: give them to Check "
+        "Submission Status.",
+    )
+    errors: list[dict[str, Any]] = Field(
+        default_factory=list, description="Errors VMRay returned on submit, and the files it could not take."
+    )
+
+
+class StartUrlSubmissionResults(StartSubmissionResults):
+    pass
+
+
+class StartFileSubmissionResults(StartSubmissionResults):
+    submitted_files: list[str] = Field(
+        default_factory=list,
+        title="Submitted Files",
+        description="Files VMRay accepted. A file that could not be read or was refused is in `errors`.",
+    )
+
+
+class CheckSubmissionStatusArguments(BaseModel):
+    submission_ids: list[int] = Field(
+        ...,
+        title="Submission IDs",
+        description="VMRay submission IDs to check — e.g. the `submission_ids` of Start File Submission or Start "
+        "URL Submission. One poll is made for each; the action does not wait.",
+    )
+
+    @field_validator("submission_ids", mode="before")
+    @classmethod
+    def _one_or_many(cls, value: Any) -> Any:
+        """A single ID is accepted as a one-item list; duplicates are checked once."""
+        if isinstance(value, int) and not isinstance(value, bool):
+            value = [value]
+        return list(dict.fromkeys(value)) if isinstance(value, list) else value
+
+    @field_validator("submission_ids", mode="after")
+    @classmethod
+    def _at_least_one(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("at least one submission ID is required")
+        return value
+
+
+class CheckSubmissionStatusResults(BaseModel):
+    all_finished: bool = Field(description="True when no submission is still running.")
+    submissions: list[Submission] = Field(default_factory=list, description="Submissions that finished without error.")
+    submission_ids: list[int] = Field(
+        default_factory=list,
+        title="Submission IDs",
+        description="IDs of the submissions that finished without error — input for Build Report.",
+    )
+    sample_ids: list[int] = Field(
+        default_factory=list,
+        title="Sample IDs",
+        description="Distinct sample_ids of the submissions that finished without error.",
+    )
+    pending_submission_ids: list[int] = Field(
+        default_factory=list,
+        title="Pending Submission IDs",
+        description="Submissions still running, or that could not be checked this time.",
+    )
+    failed_submission_ids: list[int] = Field(
+        default_factory=list,
+        title="Failed Submission IDs",
+        description="Submissions that finished with an error.",
+    )
+    errors: list[dict[str, Any]] = Field(
+        default_factory=list, description="Why a submission failed, or could not be checked."
     )
 
 
@@ -299,6 +387,156 @@ class GetSamplesByHashResults(BaseModel):
     not_found: list[str] = Field(default_factory=list, description="Hashes VMRay has never analysed.")
     errors: dict[str, str] = Field(
         default_factory=dict, description="Per-hash failures (invalid hash or lookup error)."
+    )
+
+
+# --------------------------------------------------------------------------
+# Child samples — GetChildSamples, GetSampleRelations, GetChildSampleReport
+# --------------------------------------------------------------------------
+
+
+class GetChildSamplesArguments(BaseModel):
+    model_config = {"json_schema_extra": hide_empty_defaults}
+
+    sample_id: int | SkipJsonSchema[None] = Field(
+        default=None,
+        title="Sample ID",
+        description="VMRay ID of the parent sample — e.g. the `sample_ids` of Get Samples By Hash or Submit File "
+        "Sample.",
+    )
+    submission_id: int | SkipJsonSchema[None] = Field(
+        default=None,
+        title="Submission ID",
+        description="VMRay submission ID — e.g. the `submission_ids` of Submit File Sample. It is resolved to its "
+        "sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+    )
+    max_depth: int = Field(
+        default=10,
+        ge=1,
+        le=10,
+        title="Max depth",
+        description="How many levels of child samples to follow (at most 10): 1 lists only the direct children, "
+        "2 adds their children, and so on.",
+    )
+    min_verdict: str = Field(
+        default="",
+        title="Minimum verdict",
+        description="Only return children whose verdict is at least this severe. Allowed values: 'clean' (every "
+        "child with a known verdict), 'suspicious' (suspicious and malicious) or 'malicious'. Leave empty to return "
+        "every child. A child that does not match is left out of the list, but its own children are still searched. "
+        "A value that is not one of these is an error.",
+    )
+
+    @field_validator("min_verdict", mode="before")
+    @classmethod
+    def _normalise_verdict(cls, value: Any) -> Any:
+        return value.strip().lower() if isinstance(value, str) else value
+
+
+class ChildSample(BaseModel):
+    sample_id: int = Field(title="Sample ID", description="VMRay sample ID of the child.")
+    parent_sample_id: int = Field(
+        title="Parent Sample ID", description="The sample this child was found in (one level up)."
+    )
+    depth: int = Field(description="1 for a direct child of the sample asked for, 2 for a child of a child, ...")
+    name: str = Field(default="", description="The child's file name.")
+    type: str = Field(default="", description="VMRay's file type of the child, e.g. 'Windows Exe (x86-64)'.")
+    md5: str = Field(default="", title="MD5")
+    sha1: str = Field(default="", title="SHA-1")
+    sha256: str = Field(default="", title="SHA-256")
+    verdict: str = Field(default="", description="VMRay's verdict for the child, e.g. 'malicious'. Empty if unknown.")
+    verdict_reason: str = Field(default="", description="Why VMRay gave that verdict.")
+    vti_score: int | None = Field(default=None, title="VTI score", description="VMRay Threat Identifier score, 0-100.")
+    webif_url: str = Field(default="", title="Web link", description="The child's page in the VMRay console.")
+    child_count: int = Field(default=0, description="How many samples VMRay found inside this child.")
+
+
+class GetChildSamplesResults(BaseModel):
+    has_children: bool = Field(description="True when at least one child matches (after `min_verdict`).")
+    sample_id: int = Field(title="Sample ID", description="The parent sample the children were looked up for.")
+    child_count: int = Field(default=0, description="How many children are listed (after `min_verdict`).")
+    total_child_count: int = Field(
+        default=0, description="How many children were found in the tree before `min_verdict` was applied."
+    )
+    sample_ids: list[int] = Field(
+        default_factory=list,
+        title="Sample IDs",
+        description="The listed children's sample IDs — input for Build Report.",
+    )
+    children: list[ChildSample] = Field(
+        default_factory=list, description="The children, nearest levels first, each with its parent and depth."
+    )
+    errors: dict[str, str] = Field(
+        default_factory=dict, description="Children that could not be read, by `child_sample:<id>`."
+    )
+
+
+class GetSampleRelationsArguments(BaseModel):
+    model_config = {"json_schema_extra": hide_empty_defaults}
+
+    sample_id: int | SkipJsonSchema[None] = Field(
+        default=None,
+        title="Sample ID",
+        description="VMRay sample ID: the relations that involve this sample are returned "
+        "(GET /rest/sample_relation/sample/{id}).",
+    )
+    submission_id: int | SkipJsonSchema[None] = Field(
+        default=None,
+        title="Submission ID",
+        description="VMRay submission ID: the relations created by this submission are returned "
+        "(GET /rest/sample_relation/submission/{id}). Used when `sample_id` is empty.",
+    )
+
+
+class GetSampleRelationsResults(BaseModel):
+    found: bool = Field(description="True when VMRay returned at least one relation.")
+    relation_count: int = Field(default=0)
+    relations: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="The relation records exactly as VMRay returns them (relation type, the samples and the "
+        "submission it links).",
+    )
+    related_sample_ids: list[int] = Field(
+        default_factory=list,
+        title="Related sample IDs",
+        description="Every other sample named in the records, taken from their `*sample_id` fields (the sample "
+        "asked for is left out).",
+    )
+
+
+class GetChildSampleReportArguments(BaseModel):
+    parent_sample_id: int = Field(
+        ...,
+        title="Parent Sample ID",
+        description="VMRay ID of the sample the child was found in — e.g. `sample_id` of Get Child Samples.",
+    )
+    child_sample_id: int = Field(
+        ...,
+        title="Child Sample ID",
+        description="VMRay ID of the child to build the report for — e.g. one of the `sample_ids` of Get Child "
+        "Samples. It must be somewhere in the parent's child tree (up to 10 levels), else the action fails.",
+    )
+    max_recursion_depth: int = Field(
+        default=10,
+        ge=0,
+        le=10,
+        description="The maximum depth of recursive samples of the child which will be analyzed in the report (at "
+        "most 10). 0 disables recursion.",
+    )
+    ioc_severity_filter: list[str] = Field(
+        default_factory=list,
+        description="Restrict which IOC severities are fetched from VMRay. Allowed values: 'malicious', "
+        "'suspicious'. Add exactly one to filter server-side; leave empty (or add both) to fetch both severities. A "
+        "list with no valid value is an error.",
+    )
+    analysis_verdict_filter: list[str] = Field(
+        default_factory=list,
+        description="Analysis verdicts to include in the report. Allowed values: 'malicious', 'suspicious', "
+        "'clean'. Leave empty to include all analyses, including those with an unknown verdict. A list with no "
+        "valid value is an error.",
+    )
+    include_screenshots: bool = Field(
+        default=True, description="If set to true, the report includes the screenshots of the child sample."
     )
 
 
