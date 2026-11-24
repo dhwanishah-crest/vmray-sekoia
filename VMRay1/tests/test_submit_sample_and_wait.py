@@ -4,19 +4,20 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from vmray_modules.models import SubmitFileSampleArguments, SubmitFileSampleResults, VMRayConfiguration, VMRayModule
-from vmray_modules.submit_file_sample_action import SubmitFileSample
+from vmray_modules.models import VMRayConfiguration, VMRayModule
+from vmray_modules.submission_models import SubmitSampleAndWaitArguments, SubmitSampleAndWaitResults
+from vmray_modules.submit_sample_and_wait_action import SubmitSampleAndWait
 
 BASE_URL = "https://eu.cloud.vmray.com"
 SHA1 = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
 OTHER = "b94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
-MANIFEST = Path(__file__).parents[1] / "action_submit_file_sample.json"
+MANIFEST = Path(__file__).parents[1] / "action_submit_sample_and_wait.json"
 
 
 def make_action():
     m = VMRayModule()
     m.configuration = VMRayConfiguration(base_url=BASE_URL, api_key="test-key")
-    return SubmitFileSample(module=m)
+    return SubmitSampleAndWait(module=m)
 
 
 def ok(data):
@@ -168,18 +169,18 @@ def test_timeout_takes_the_timed_out_branch(requests_mock, storage):
     ],
 )
 def test_files_input_takes_the_sentinelone_output_as_is(given, paths):
-    assert SubmitFileSampleArguments(files=given).files == paths
+    assert SubmitSampleAndWaitArguments(files=given).files == paths
 
 
 @pytest.mark.parametrize("given", [[], [""], [{"name": "x"}], [42]])
 def test_files_input_refuses_no_file(given):
     with pytest.raises(ValidationError):
-        SubmitFileSampleArguments(files=given)
+        SubmitSampleAndWaitArguments(files=given)
 
 
 def test_manifest_matches_the_models():
     manifest = json.loads(MANIFEST.read_text())
 
-    assert manifest["docker_parameters"] == "SubmitFileSample"
-    assert manifest["arguments"] == SubmitFileSampleArguments.model_json_schema()
-    assert manifest["results"] == SubmitFileSampleResults.model_json_schema()
+    assert manifest["docker_parameters"] == "SubmitSampleAndWait"
+    assert manifest["arguments"] == SubmitSampleAndWaitArguments.model_json_schema()
+    assert manifest["results"] == SubmitSampleAndWaitResults.model_json_schema()

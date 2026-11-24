@@ -24,6 +24,7 @@
   "results": {
     "properties": {
       "found": {
+        "description": "True when VMRay knows at least one sample for the hashes.",
         "title": "Found",
         "type": "boolean"
       },

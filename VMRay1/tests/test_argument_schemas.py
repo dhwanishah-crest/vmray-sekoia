@@ -3,33 +3,35 @@ from pathlib import Path
 
 import pytest
 
-from vmray_modules.models import (
-    BuildReportArguments,
-    CheckSubmissionStatusArguments,
+from vmray_modules.models import BuildReportArguments
+from vmray_modules.report_models import ExtractIocsArguments, RenderReportArguments
+from vmray_modules.sample_models import (
     GetChildSampleReportArguments,
     GetChildSamplesArguments,
     GetSampleRelationsArguments,
     GetSamplesByHashArguments,
-    StartFileSubmissionArguments,
-    StartUrlSubmissionArguments,
-    SubmitFileSampleArguments,
-    SubmitUrlSampleArguments,
 )
-from vmray_modules.report_models import ExtractIocsArguments, RenderReportArguments
+from vmray_modules.submission_models import (
+    GetSubmissionResultArguments,
+    SubmitSampleAndWaitArguments,
+    SubmitSampleArguments,
+    SubmitUrlAndWaitArguments,
+    SubmitUrlArguments,
+)
 
 
 @pytest.mark.parametrize(
     "model",
     [
-        SubmitFileSampleArguments,
-        SubmitUrlSampleArguments,
+        SubmitSampleAndWaitArguments,
+        SubmitUrlAndWaitArguments,
         GetSamplesByHashArguments,
         GetChildSamplesArguments,
         GetSampleRelationsArguments,
         GetChildSampleReportArguments,
-        StartFileSubmissionArguments,
-        StartUrlSubmissionArguments,
-        CheckSubmissionStatusArguments,
+        SubmitSampleArguments,
+        SubmitUrlArguments,
+        GetSubmissionResultArguments,
         BuildReportArguments,
         RenderReportArguments,
         ExtractIocsArguments,
@@ -46,7 +48,7 @@ def test_every_input_shows_in_the_playbook_editor(model):
 
 def test_empty_optional_inputs_still_mean_not_set():
     assert BuildReportArguments().sample_ids is None
-    assert SubmitFileSampleArguments(files=["x"]).enable_reputation is None
+    assert SubmitSampleAndWaitArguments(files=["x"]).enable_reputation is None
 
 
 def test_render_report_inputs_have_readable_titles_and_a_512_kb_default():

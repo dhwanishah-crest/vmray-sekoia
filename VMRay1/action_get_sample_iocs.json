@@ -1,0 +1,71 @@
+{
+  "name": "Get Sample IOCs",
+  "slug": "get_sample_iocs",
+  "description": "Get the indicators of compromise (URLs, domains, IPs, files, ...) VMRay found for a sample \u2014 costs no quota.",
+  "uuid": "c598aed8-6ca0-43d0-bf34-c769bc330906",
+  "docker_parameters": "GetSampleIocs",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay sample ID \u2014 e.g. the `sample_ids` of Get Submission Result or Get Samples By Hash.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit Sample. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      },
+      "ioc_severity_filter": {
+        "description": "Restrict which IOC severities are fetched from VMRay. Allowed values: 'malicious', 'suspicious'. Add exactly one to filter server-side; leave empty (or add both) to fetch both severities. A list with no valid value is an error.",
+        "items": {
+          "type": "string"
+        },
+        "title": "IOC severity filter",
+        "type": "array"
+      }
+    },
+    "title": "GetSampleIocsArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "found": {
+        "description": "True when VMRay returned at least one IOC.",
+        "title": "Found",
+        "type": "boolean"
+      },
+      "sample_id": {
+        "description": "The sample the data belongs to.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "ioc_count": {
+        "default": 0,
+        "description": "How many IOCs there are in all categories.",
+        "title": "Ioc Count",
+        "type": "integer"
+      },
+      "ioc_counts": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "description": "How many IOCs there are per category.",
+        "title": "Ioc Counts",
+        "type": "object"
+      },
+      "iocs": {
+        "additionalProperties": true,
+        "description": "The IOCs as VMRay returns them, by category (urls, domains, ips, files, mutexes, ...).",
+        "title": "Iocs",
+        "type": "object"
+      }
+    },
+    "required": [
+      "found",
+      "sample_id"
+    ],
+    "title": "GetSampleIocsResults",
+    "type": "object"
+  }
+}

@@ -21,7 +21,7 @@
         "description": "The maximum depth of recursive samples of the child which will be analyzed in the report (at most 10). 0 disables recursion.",
         "maximum": 10,
         "minimum": 0,
-        "title": "Max Recursion Depth",
+        "title": "Max recursion depth",
         "type": "integer"
       },
       "ioc_severity_filter": {
@@ -29,7 +29,7 @@
         "items": {
           "type": "string"
         },
-        "title": "Ioc Severity Filter",
+        "title": "IOC severity filter",
         "type": "array"
       },
       "analysis_verdict_filter": {
@@ -37,13 +37,13 @@
         "items": {
           "type": "string"
         },
-        "title": "Analysis Verdict Filter",
+        "title": "Analysis verdict filter",
         "type": "array"
       },
       "include_screenshots": {
         "default": true,
         "description": "If set to true, the report includes the screenshots of the child sample.",
-        "title": "Include Screenshots",
+        "title": "Include screenshots",
         "type": "boolean"
       }
     },

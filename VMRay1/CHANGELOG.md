@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-11-23 - 1.2.0
+
+### Added
+- Get Sample IOCs, Get Sample Mitre Attack Techniques, Get Sample VTIs, Get Sample Screenshots, Get Sample Report and Get Analysis Archive actions: read one part of a sample's analysis without building the whole report; the screenshots, report and archive are saved as files in the playbook run's storage
+
+### Changed
+- The inputs of the submit actions now start with the sample (the files or the URL), then Re-analyze and Tags, then the VMRay options; every input has a title, and the descriptions use the current action names
+- Renamed the actions added in 1.1.0: Start File Submission is now Submit Sample, Start URL Submission is now Submit URL, and Check Submission Status is now Get Submission Result
+- Renamed the actions that wait for the analysis to finish, so they do not clash: Submit File Sample is now Submit Sample And Wait, and Submit URL Sample is now Submit URL And Wait. Their IDs and behaviour are unchanged. Their technical names (`SubmitSampleAndWait`, `SubmitUrlAndWait`) changed too, so install this release fresh: delete the integration in Sekoia and import it again
+- The models are split by area (`submission_models.py`, `sample_models.py`) and the shared sample lookups moved to `sample_helpers.py`; no behaviour change
+
 ## 2026-11-23 - 1.1.0
 
 ### Added

@@ -1,0 +1,487 @@
+{
+  "name": "VMRay1: Scan URL",
+  "uuid": "03c5b216-455e-4514-9c51-081772d20835",
+  "tags": [
+    "Alerts",
+    "Enrichment",
+    "VMRay1"
+  ],
+  "workspace": "Operation Center",
+  "description": "Run by an analyst on an alert to scan a URL. Submits the URL set on 'VMRay: Submit URL' (the harmless EICAR test file by default) to VMRay without blocking, checks the analysis after 2, 6 and 14 minutes (Wait + Get Submission Result), posts the full report with screenshots as alert comments, pushes the IOCs to an IOC collection and lists the suspicious or malicious child samples. Consumes VMRay quota. Before use: select your VMRay1 account on the VMRay1 nodes and set ioc_collection_id on 'Add IOCs to IOC Collection'.",
+  "nodes": {
+    "0": {
+      "name": "Manual Trigger",
+      "type": "trigger",
+      "outputs": {
+        "default": [
+          "6"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1500
+      },
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "trigger_uuid": "fc26eb9f-b272-4c15-b3bf-ace397c0dc57"
+    },
+    "6": {
+      "name": "VMRay: Submit URL",
+      "type": "action",
+      "outputs": {
+        "submitted": [
+          "19"
+        ],
+        "submission_failed": [
+          "25"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1736
+      },
+      "arguments": {
+        "sample_url": "https://secure.eicar.org/eicar.com.txt",
+        "reanalyze": true
+      },
+      "action_uuid": "94e35072-771e-4ef6-b5bb-90ae3f50de43",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "8": {
+      "name": "VMRay: Build Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "10",
+          "26"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 2680
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}",
+        "include_screenshots": true,
+        "max_recursion_depth": 5
+      },
+      "action_uuid": "9689eaa4-7411-44e3-a6b8-817121c41256",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "9": {
+      "name": "Comment Alert (Sandbox Incomplete)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 3000,
+        "y": 4096
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: sandbox analysis incomplete** — the URL did not return a report: VMRay either finished the analysis with an error or was still analysing it at the last check.\n\nSubmission(s): {{ node.6['submission_ids'] | join(', ') }}. Open the submission in VMRay to follow it."
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "10": {
+      "name": "VMRay: Render Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "11"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 2916
+      },
+      "arguments": {
+        "report_path": "{{ node.8['report_path'] }}",
+        "max_comment_kb": 512
+      },
+      "action_uuid": "8d9030e2-fdab-435d-b7a9-c5516a43d362",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "11": {
+      "name": "Comment Alert (Report)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "12",
+          "13"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 3152
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "{{ node.10['content'] }}{% if node.6['errors'] %}<p><b>Not in this report</b></p><ul>{% for e in node.6['errors'] %}<li>{% if e.get('file') %}file <code>{{ e.get('file') | e }}</code>{% elif e.get('submission_id') %}submission {{ e.get('submission_id') }}{% endif %} — <code>{{ (e.get('error_msg') or 'unknown error') | e }}</code></li>{% endfor %}</ul>{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "12": {
+      "name": "Screenshots?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ node.10['screenshot_comments'] | length }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "The report has no screenshot — a Foreach rejects an empty list (\"Foreach input is not a list\")"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "14"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 2100,
+        "y": 3388
+      }
+    },
+    "13": {
+      "name": "VMRay: Extract IOCs",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "16"
+        ]
+      },
+      "position": {
+        "x": 1800,
+        "y": 3624
+      },
+      "arguments": {
+        "report_path": "{{ node.8['report_path'] }}"
+      },
+      "action_uuid": "c75fb414-5642-4797-85fa-603502cd9bbb",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "14": {
+      "loop": [
+        "15"
+      ],
+      "name": "Foreach Screenshot Comment",
+      "type": "operator",
+      "items": "{{ node.10['screenshot_comments'] }}",
+      "outputs": {
+        "default": []
+      },
+      "subtype": "foreach",
+      "position": {
+        "x": 2100,
+        "y": 3624
+      }
+    },
+    "15": {
+      "name": "Comment Alert (Screenshots)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2400,
+        "y": 3624
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "{{ node.14.default.value }}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "16": {
+      "name": "Indicators to Push?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ node.13['indicator_groups'] | length }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "Extract IOCs found no indicator to push — a Foreach rejects an empty list (\"Foreach input is not a list\")"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "17"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 1800,
+        "y": 3860
+      }
+    },
+    "17": {
+      "loop": [
+        "18"
+      ],
+      "name": "Foreach Indicator Type",
+      "type": "operator",
+      "items": "{{ node.13['indicator_groups'] }}",
+      "outputs": {
+        "default": []
+      },
+      "subtype": "foreach",
+      "position": {
+        "x": 1800,
+        "y": 4096
+      }
+    },
+    "18": {
+      "name": "Add IOCs to IOC Collection",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2100,
+        "y": 4096
+      },
+      "arguments": {
+        "valid_for": 30,
+        "indicators": "{{ node.17.default.value['indicators'] }}",
+        "indicator_type": "{{ node.17.default.value['type'] }}",
+        "ioc_collection_id": "ioc-collection--8a88f80e-b58f-45e4-940d-ab0ecf9fe35b"
+      },
+      "action_uuid": "0acabc04-43b4-4564-b9b2-08b80e0e1ecf",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "19": {
+      "name": "Wait (first check)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "20"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1972
+      },
+      "arguments": {
+        "duration": 120
+      },
+      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
+      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
+    },
+    "20": {
+      "name": "VMRay: Get Submission Result (1)",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "pending": [
+          "21"
+        ],
+        "failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2208
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}"
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "21": {
+      "name": "Wait (second check)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "22"
+        ]
+      },
+      "position": {
+        "x": 2400,
+        "y": 2208
+      },
+      "arguments": {
+        "duration": 240
+      },
+      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
+      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
+    },
+    "22": {
+      "name": "VMRay: Get Submission Result (2)",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "pending": [
+          "23"
+        ],
+        "failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2400,
+        "y": 2444
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}"
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "23": {
+      "name": "Wait (third check)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "24"
+        ]
+      },
+      "position": {
+        "x": 2700,
+        "y": 2444
+      },
+      "arguments": {
+        "duration": 480
+      },
+      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
+      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
+    },
+    "24": {
+      "name": "VMRay: Get Submission Result (3)",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "8"
+        ],
+        "pending": [
+          "9"
+        ],
+        "failed": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2700,
+        "y": 2680
+      },
+      "arguments": {
+        "submission_ids": "{{ node.6['submission_ids'] }}"
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "25": {
+      "name": "Comment Alert (URL Not Submitted)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2400,
+        "y": 3152
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: the URL was not submitted** — VMRay accepted nothing, so nothing was analysed.{% if node.6['errors'] %}\n\nErrors:\n{% for e in node.6['errors'] %}\n- `{{ (e.get('error_msg') or 'unknown error') | string | replace('`', \"'\") | replace('\\n', ' ') }}`{% endfor %}{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "26": {
+      "name": "Report Has Sample?",
+      "type": "operator",
+      "cases": [
+        {
+          "left": "{{ node.8['sample_ids'] | length }}",
+          "name": "Yes",
+          "right": "{{ 0 }}",
+          "comparison": ">",
+          "description": "Build Report returned the submitted sample, whose child samples can be looked up"
+        }
+      ],
+      "outputs": {
+        "Yes": [
+          "27"
+        ],
+        "else": []
+      },
+      "subtype": "condition",
+      "position": {
+        "x": 1500,
+        "y": 2916
+      },
+      "description": "Build Report returned the submitted sample, whose child samples can be looked up"
+    },
+    "27": {
+      "name": "VMRay: Get Child Samples",
+      "type": "action",
+      "outputs": {
+        "has_children": [
+          "28"
+        ],
+        "no_children": []
+      },
+      "position": {
+        "x": 1500,
+        "y": 3152
+      },
+      "arguments": {
+        "sample_id": "{{ node.8['sample_ids'][0] }}",
+        "max_depth": 10,
+        "min_verdict": "suspicious"
+      },
+      "action_uuid": "2da386a5-668f-4ade-b399-a6171f6d763b",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+    },
+    "28": {
+      "name": "Comment Alert (Child Samples)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 1500,
+        "y": 3388
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: {{ node.27['child_count'] }} suspicious or malicious child sample(s)** found found while analysing the URL ({{ node.27['total_child_count'] }} child sample(s) in total).\n\n{% for c in node.27['children'][:20] %}- **{{ c['verdict'] }}** `{{ c['name'] | string | replace('`', \"'\") }}` ({{ c['type'] }}, VTI {{ c['vti_score'] }}), sha256 `{{ c['sha256'] }}` — [View in VMRay]({{ c['webif_url'] }})\n{% endfor %}{% if node.27['child_count'] > 20 %}\nAnd {{ node.27['child_count'] - 20 }} more.{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    }
+  },
+  "community_uuid": "2b44a715-e677-4489-9803-19c8e7929f85"
+}

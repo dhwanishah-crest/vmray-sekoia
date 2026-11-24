@@ -1,13 +1,13 @@
 {
-  "name": "Check Submission Status",
-  "slug": "check_submission_status",
-  "description": "Check once whether VMRay submissions have finished (no waiting, no quota): completed, still pending, or failed.",
+  "name": "Get Submission Result",
+  "slug": "get_submission_result",
+  "description": "Check once whether VMRay submissions have finished: completed, still pending or failed. Does not wait and costs no quota.",
   "uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
-  "docker_parameters": "CheckSubmissionStatus",
+  "docker_parameters": "GetSubmissionResult",
   "arguments": {
     "properties": {
       "submission_ids": {
-        "description": "VMRay submission IDs to check \u2014 e.g. the `submission_ids` of Start File Submission or Start URL Submission. One poll is made for each; the action does not wait.",
+        "description": "VMRay submission IDs to check \u2014 e.g. the `submission_ids` of Submit Sample or Submit URL. One poll is made for each; the action does not wait.",
         "items": {
           "type": "integer"
         },
@@ -18,7 +18,7 @@
     "required": [
       "submission_ids"
     ],
-    "title": "CheckSubmissionStatusArguments",
+    "title": "GetSubmissionResultArguments",
     "type": "object"
   },
   "results": {
@@ -158,7 +158,7 @@
         "type": "array"
       },
       "sample_ids": {
-        "description": "Distinct sample_ids of the submissions that finished without error.",
+        "description": "Distinct sample_ids of the submissions that finished without error \u2014 input for Build Report and the Get Sample actions.",
         "items": {
           "type": "integer"
         },
@@ -194,7 +194,7 @@
     "required": [
       "all_finished"
     ],
-    "title": "CheckSubmissionStatusResults",
+    "title": "GetSubmissionResultResults",
     "type": "object"
   }
 }

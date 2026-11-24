@@ -1,0 +1,70 @@
+{
+  "name": "Get Analysis Archive",
+  "slug": "get_analysis_archive",
+  "description": "Download the archive of a VMRay analysis (or one file of it) into the playbook run's storage \u2014 costs no quota.",
+  "uuid": "e5832f31-e40b-4aed-962f-e8fbe6a4ed66",
+  "docker_parameters": "GetAnalysisArchive",
+  "arguments": {
+    "properties": {
+      "analysis_id": {
+        "description": "VMRay analysis ID \u2014 e.g. the `analysis_id` of an analysis in Build Report's report, or of a screenshot of Get Sample Screenshots.",
+        "title": "Analysis ID",
+        "type": "integer"
+      },
+      "archive_path": {
+        "default": "",
+        "description": "One file of the archive, such as 'logs/summary.json', instead of the whole ZIP. Leave empty for the whole archive. A path that is absolute or contains '..' is an error.",
+        "title": "Archive path",
+        "type": "string"
+      },
+      "max_size_mb": {
+        "default": 64,
+        "description": "The largest answer accepted, in megabytes; a bigger one fails the action instead of filling the playbook run's storage.",
+        "maximum": 512,
+        "minimum": 1,
+        "title": "Max size (MB)",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "analysis_id"
+    ],
+    "title": "GetAnalysisArchiveArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "files": {
+        "description": "The saved file as {\"path\": ...} in the playbook run's storage.",
+        "items": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "title": "Files",
+        "type": "array"
+      },
+      "file_name": {
+        "default": "",
+        "description": "Name of the saved file.",
+        "title": "File Name",
+        "type": "string"
+      },
+      "size": {
+        "default": 0,
+        "description": "Size of the file in bytes.",
+        "title": "Size",
+        "type": "integer"
+      },
+      "sha256": {
+        "default": "",
+        "description": "SHA-256 of the saved file.",
+        "title": "SHA-256",
+        "type": "string"
+      }
+    },
+    "title": "GetAnalysisArchiveResults",
+    "type": "object"
+  }
+}

@@ -14,6 +14,7 @@ VMRay1 integration for Sekoia.io: a Sekoia automation module and the playbooks t
 
 | File | What it is |
 |---|---|
+| `playbooks/templates/vmray1_scan_url.json` | "VMRay1: Scan URL" — Manual trigger. Scans a URL (the EICAR test file by default); needs no EDR. |
 | `playbooks/templates/vmray1_sentinelone_manual_tmp.json` | "VMRay1: Manual - Scan SentinelOne file (TMP test)" — Manual trigger; same steps, run by an analyst on an alert. For testing. |
 | `playbooks/templates/vmray1_sentinelone_demo.json` | "VMRay1: Alert Created - Scan SentinelOne file" — Alert Created trigger. SentinelOne fetches the threat's file from the endpoint, VMRay analyses it (started without blocking, then checked after 2, 6 and 14 minutes), and the report and the suspicious child samples are posted on the alert. Carries this tenant's trigger and SentinelOne account IDs. |
 

@@ -1,0 +1,66 @@
+{
+  "name": "Get Sample Mitre Attack Techniques",
+  "slug": "get_sample_mitre_attack_techniques",
+  "description": "Get the MITRE ATT&CK techniques VMRay observed for a sample \u2014 costs no quota.",
+  "uuid": "9bd73b23-1d65-406d-b2d0-e6e47483bf91",
+  "docker_parameters": "GetSampleMitreAttackTechniques",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay sample ID \u2014 e.g. the `sample_ids` of Get Submission Result or Get Samples By Hash.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit Sample. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      }
+    },
+    "title": "GetSampleMitreAttackTechniquesArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "found": {
+        "description": "True when VMRay returned at least one technique.",
+        "title": "Found",
+        "type": "boolean"
+      },
+      "sample_id": {
+        "description": "The sample the data belongs to.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "technique_count": {
+        "default": 0,
+        "description": "How many techniques VMRay returned.",
+        "title": "Technique Count",
+        "type": "integer"
+      },
+      "technique_ids": {
+        "description": "The ATT&CK technique IDs found in the techniques (e.g. T1055), in order.",
+        "items": {
+          "type": "string"
+        },
+        "title": "Technique IDs",
+        "type": "array"
+      },
+      "techniques": {
+        "description": "The techniques exactly as VMRay returns them.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Techniques",
+        "type": "array"
+      }
+    },
+    "required": [
+      "found",
+      "sample_id"
+    ],
+    "title": "GetSampleMitreAttackTechniquesResults",
+    "type": "object"
+  }
+}

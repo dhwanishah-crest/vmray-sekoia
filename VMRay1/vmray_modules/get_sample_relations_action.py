@@ -14,7 +14,7 @@ from typing import Any
 from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.base import VMRayAction
-from vmray_modules.models import GetSampleRelationsArguments, GetSampleRelationsResults
+from vmray_modules.sample_models import GetSampleRelationsArguments, GetSampleRelationsResults
 
 _SAMPLE_ID_FIELD = re.compile(r"sample_id$")
 

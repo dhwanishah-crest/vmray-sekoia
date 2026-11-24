@@ -1,0 +1,117 @@
+{
+  "name": "Get Sample Screenshots",
+  "slug": "get_sample_screenshots",
+  "description": "Save the screenshots VMRay took while analysing a sample as files in the playbook run's storage \u2014 costs no quota.",
+  "uuid": "180677ed-2045-4614-b362-93d487a10e69",
+  "docker_parameters": "GetSampleScreenshots",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay sample ID \u2014 e.g. the `sample_ids` of Get Submission Result or Get Samples By Hash.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit Sample. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      },
+      "max_screenshots": {
+        "default": 20,
+        "description": "The most screenshots to save, taking the newest analyses first.",
+        "maximum": 200,
+        "minimum": 1,
+        "title": "Max screenshots",
+        "type": "integer"
+      }
+    },
+    "title": "GetSampleScreenshotsArguments",
+    "type": "object"
+  },
+  "results": {
+    "$defs": {
+      "ScreenshotFile": {
+        "properties": {
+          "path": {
+            "description": "The screenshot's file in the playbook run's storage.",
+            "title": "Path",
+            "type": "string"
+          },
+          "analysis_id": {
+            "title": "Analysis ID",
+            "type": "integer"
+          },
+          "name": {
+            "description": "The screenshot's name in the analysis archive.",
+            "title": "Name",
+            "type": "string"
+          },
+          "size": {
+            "description": "Size in bytes.",
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "analysis_id",
+          "name",
+          "size"
+        ],
+        "title": "ScreenshotFile",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "found": {
+        "description": "True when at least one screenshot was saved.",
+        "title": "Found",
+        "type": "boolean"
+      },
+      "sample_id": {
+        "description": "The sample the data belongs to.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "screenshot_count": {
+        "default": 0,
+        "description": "How many screenshots were saved.",
+        "title": "Screenshot Count",
+        "type": "integer"
+      },
+      "files": {
+        "description": "The saved screenshots as {\"path\": ...}, the shape the file actions take.",
+        "items": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "title": "Files",
+        "type": "array"
+      },
+      "screenshots": {
+        "description": "The saved screenshots with their analysis and size.",
+        "items": {
+          "$ref": "#/$defs/ScreenshotFile"
+        },
+        "title": "Screenshots",
+        "type": "array"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Screenshots or analyses that could not be read.",
+        "title": "Errors",
+        "type": "object"
+      }
+    },
+    "required": [
+      "found",
+      "sample_id"
+    ],
+    "title": "GetSampleScreenshotsResults",
+    "type": "object"
+  }
+}

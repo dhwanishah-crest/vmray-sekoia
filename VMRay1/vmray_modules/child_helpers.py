@@ -1,4 +1,5 @@
-"""What the child-sample actions share: finding the sample to start from, and walking its child tree.
+"""What the child-sample actions share: walking a sample's child tree (finding the sample to start from is in
+sample_helpers).
 
 VMRay lists the samples it found inside a sample (files in an archive, attachments of an email, files a URL
 downloads, ...) in the parent's `sample_child_sample_ids`. Each child is a sample of its own, with its own verdict
@@ -9,11 +10,10 @@ from collections import deque
 from collections.abc import Iterator
 from typing import Any
 
-from sekoia_automation.exceptions import MissingActionArgumentError
-
 from vmray_modules.build_report_action import _RECOVERABLE, _describe
 from vmray_modules.client import VMRayClient
-from vmray_modules.models import ChildSample
+from vmray_modules.sample_helpers import get_sample_object
+from vmray_modules.sample_models import ChildSample
 
 # How severe a verdict is: the verdicts above 0 are the ones `min_verdict` can ask for. Anything else VMRay sends
 # (unknown, not analysed, ...) ranks 0, so it only shows when no minimum is set.
@@ -40,26 +40,6 @@ def check_min_verdict(value: str) -> int:
     if value not in MIN_VERDICTS:
         raise ValueError(f"min_verdict has no valid value: {value!r} — use 'clean', 'suspicious' or 'malicious'")
     return _VERDICT_RANK[value]
-
-
-def resolve_sample_id(client: VMRayClient, sample_id: int | None, submission_id: int | None) -> int:
-    """`sample_id` as given, else the sample of the submission."""
-    if sample_id is not None:
-        return sample_id
-    if submission_id is None:
-        raise MissingActionArgumentError("sample_id or submission_id")
-    submission = client.update_submission(submission_id)
-    resolved = submission.get("submission_sample_id") if isinstance(submission, dict) else None
-    if resolved is None:
-        raise ValueError(f"VMRay returned no sample for submission {submission_id}")
-    return int(resolved)
-
-
-def get_sample_object(client: VMRayClient, sample_id: int) -> dict[str, Any]:
-    sample = client.get_sample(sample_id)
-    if not isinstance(sample, dict) or "sample_id" not in sample:
-        raise ValueError(f"VMRay returned an unexpected answer for sample {sample_id}")
-    return sample
 
 
 def walk_children(

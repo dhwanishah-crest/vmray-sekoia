@@ -1,6 +1,6 @@
-"""CheckSubmissionStatus — one look at whether submissions have finished.
+"""GetSubmissionResult — one look at whether submissions have finished.
 
-Takes the submission IDs of Start File Submission or Start URL Submission (or of Submit File Sample and Submit URL
+Takes the submission IDs of Submit Sample or Submit URL (or of Submit Sample And Wait and Submit URL
 Sample) and asks VMRay once for each (GET /submission/{id}). It does not wait and does not loop: a playbook decides
 what to do while something is still running.
 
@@ -22,19 +22,19 @@ from pydantic import ValidationError
 
 from vmray_modules.base import VMRayAction
 from vmray_modules.client import VMRayClientError
-from vmray_modules.models import CheckSubmissionStatusArguments, CheckSubmissionStatusResults, Submission
+from vmray_modules.submission_models import GetSubmissionResultArguments, GetSubmissionResultResults, Submission
 from vmray_modules.submit_helpers import submission_state
 
 
-class CheckSubmissionStatus(VMRayAction):
-    name = "Check Submission Status"
+class GetSubmissionResult(VMRayAction):
+    name = "Get Submission Result"
     description = (
-        "Check once whether VMRay submissions have finished (no waiting, no quota): completed, still pending, or "
-        "failed."
+        "Check once whether VMRay submissions have finished: completed, still pending or failed. Does not wait "
+        "and costs no quota."
     )
-    results_model = CheckSubmissionStatusResults
+    results_model = GetSubmissionResultResults
 
-    def run(self, arguments: CheckSubmissionStatusArguments) -> CheckSubmissionStatusResults:
+    def run(self, arguments: GetSubmissionResultArguments) -> GetSubmissionResultResults:
         finished: list[Submission] = []
         pending: list[int] = []
         failed: list[int] = []
@@ -64,7 +64,7 @@ class CheckSubmissionStatus(VMRayAction):
             )
 
         self.set_output("pending" if pending else "completed" if finished else "failed", True)
-        return CheckSubmissionStatusResults(
+        return GetSubmissionResultResults(
             all_finished=not pending,
             submissions=finished,
             submission_ids=[s.submission_id for s in finished],

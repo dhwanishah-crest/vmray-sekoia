@@ -1,0 +1,79 @@
+{
+  "name": "Get Sample VTIs",
+  "slug": "get_sample_vtis",
+  "description": "Get the VMRay Threat Identifiers (VTIs) of a sample, optionally only the high-scoring ones \u2014 costs no quota.",
+  "uuid": "93d9a13f-cc8f-4fc2-a196-f9d59881bf1c",
+  "docker_parameters": "GetSampleVtis",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay sample ID \u2014 e.g. the `sample_ids` of Get Submission Result or Get Samples By Hash.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit Sample. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      },
+      "min_score": {
+        "default": 0,
+        "description": "Only return the threat identifiers whose score is at least this (VMRay scores them 1 to 5). 0 returns every identifier.",
+        "maximum": 5,
+        "minimum": 0,
+        "title": "Minimum score",
+        "type": "integer"
+      }
+    },
+    "title": "GetSampleVtisArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "found": {
+        "description": "True when at least one VMRay Threat Identifier is returned.",
+        "title": "Found",
+        "type": "boolean"
+      },
+      "sample_id": {
+        "description": "The sample the data belongs to.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "vti_count": {
+        "default": 0,
+        "description": "How many threat identifiers are returned (after `min_score`).",
+        "title": "VTI count",
+        "type": "integer"
+      },
+      "max_score": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The highest score among the returned identifiers.",
+        "title": "Max Score"
+      },
+      "threat_indicators": {
+        "description": "The VMRay Threat Identifiers exactly as VMRay returns them.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Threat Indicators",
+        "type": "array"
+      }
+    },
+    "required": [
+      "found",
+      "sample_id"
+    ],
+    "title": "GetSampleVtisResults",
+    "type": "object"
+  }
+}

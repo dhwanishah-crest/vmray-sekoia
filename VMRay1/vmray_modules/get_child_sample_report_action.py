@@ -13,8 +13,10 @@ its path is returned, exactly like Build Report, so Render Report and Extract IO
 
 from vmray_modules.base import VMRayAction
 from vmray_modules.build_report_action import _ANALYSIS_VERDICTS, _IOC_SEVERITIES, check_filter, write_report
-from vmray_modules.child_helpers import get_sample_object, walk_children
-from vmray_modules.models import BuildReportArguments, BuildReportResults, GetChildSampleReportArguments
+from vmray_modules.child_helpers import walk_children
+from vmray_modules.models import BuildReportArguments, BuildReportResults
+from vmray_modules.sample_helpers import get_sample_object
+from vmray_modules.sample_models import GetChildSampleReportArguments
 
 _SEARCH_DEPTH = 10  # the deepest level VMRay's child tree is followed to elsewhere in the module
 

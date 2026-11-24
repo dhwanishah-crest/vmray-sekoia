@@ -1,0 +1,78 @@
+{
+  "name": "Get Sample Report",
+  "slug": "get_sample_report",
+  "description": "Download the report VMRay generated for a sample into the playbook run's storage \u2014 costs no quota.",
+  "uuid": "ef91345c-c4af-48f5-9a7d-af7d35c7ed9b",
+  "docker_parameters": "GetSampleReport",
+  "arguments": {
+    "properties": {
+      "sample_id": {
+        "description": "VMRay sample ID \u2014 e.g. the `sample_ids` of Get Submission Result or Get Samples By Hash.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "submission_id": {
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit Sample. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "title": "Submission ID",
+        "type": "integer"
+      },
+      "max_size_mb": {
+        "default": 64,
+        "description": "The largest report accepted, in megabytes; a bigger one fails the action.",
+        "maximum": 512,
+        "minimum": 1,
+        "title": "Max size (MB)",
+        "type": "integer"
+      }
+    },
+    "title": "GetSampleReportArguments",
+    "type": "object"
+  },
+  "results": {
+    "properties": {
+      "files": {
+        "description": "The saved file as {\"path\": ...} in the playbook run's storage.",
+        "items": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "title": "Files",
+        "type": "array"
+      },
+      "file_name": {
+        "default": "",
+        "description": "Name of the saved file.",
+        "title": "File Name",
+        "type": "string"
+      },
+      "size": {
+        "default": 0,
+        "description": "Size of the file in bytes.",
+        "title": "Size",
+        "type": "integer"
+      },
+      "sha256": {
+        "default": "",
+        "description": "SHA-256 of the saved file.",
+        "title": "SHA-256",
+        "type": "string"
+      },
+      "sample_id": {
+        "default": 0,
+        "description": "The sample the report belongs to.",
+        "title": "Sample ID",
+        "type": "integer"
+      },
+      "content_type": {
+        "default": "",
+        "description": "The Content-Type VMRay answered with, e.g. 'application/pdf'.",
+        "title": "Content Type",
+        "type": "string"
+      }
+    },
+    "title": "GetSampleReportResults",
+    "type": "object"
+  }
+}

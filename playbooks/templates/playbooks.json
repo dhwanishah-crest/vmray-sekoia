@@ -21,5 +21,16 @@
     ],
     "workspace": "Operation Center",
     "description": "Temporary test copy of the SentinelOne scan playbook with a Manual trigger"
+  },
+  {
+    "file": "vmray1_scan_url.json",
+    "name": "VMRay1: Scan URL",
+    "tags": [
+      "Alerts",
+      "Enrichment",
+      "VMRay1"
+    ],
+    "workspace": "Operation Center",
+    "description": "Scan a URL on demand: submit it to VMRay, check the analysis, post the report with screenshots as alert comments, push the IOCs and list the suspicious child samples"
   }
 ]

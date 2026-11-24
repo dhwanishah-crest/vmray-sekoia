@@ -70,11 +70,14 @@ class IndicatorGroup(BaseModel):
     """One add_ioc_to_ioc_collection call: its indicator_type and the values to push."""
 
     type: str = Field(..., description="Sekoia indicator_type: IP address, domain, url, email or hash.")
-    indicators: list[str] = Field(default_factory=list)
+    indicators: list[str] = Field(default_factory=list, description="The indicator values of this type.")
 
 
 class ExtractIocsResults(BaseModel):
-    indicators: list[Indicator] = Field(default_factory=list)
+    indicators: list[Indicator] = Field(
+        default_factory=list,
+        description="Every indicator found, typed as Add IOC to IOC Collection expects (indicator_type and value).",
+    )
     indicator_groups: list[IndicatorGroup] = Field(
         default_factory=list,
         description="The same indicators grouped by type, one group per non-empty type — Add IOC to IOC Collection "

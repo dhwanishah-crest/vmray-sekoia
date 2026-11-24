@@ -15,7 +15,7 @@
         "type": "array"
       },
       "submission_ids": {
-        "description": "VMRay submission IDs \u2014 e.g. the `submission_ids` of Submit URL Sample. Each is resolved to its sample with one GET /submission/{id}. Used when `sample_ids` is empty.",
+        "description": "VMRay submission IDs \u2014 e.g. the `submission_ids` of Submit URL And Wait. Each is resolved to its sample with one GET /submission/{id}. Used when `sample_ids` is empty.",
         "items": {
           "type": "integer"
         },
@@ -27,7 +27,7 @@
         "description": "The maximum depth of recursive samples which will be analyzed in the report (at most 10). 0 disables recursion.",
         "maximum": 10,
         "minimum": 0,
-        "title": "Max Recursion Depth",
+        "title": "Max recursion depth",
         "type": "integer"
       },
       "ioc_severity_filter": {
@@ -35,7 +35,7 @@
         "items": {
           "type": "string"
         },
-        "title": "Ioc Severity Filter",
+        "title": "IOC severity filter",
         "type": "array"
       },
       "analysis_verdict_filter": {
@@ -43,13 +43,13 @@
         "items": {
           "type": "string"
         },
-        "title": "Analysis Verdict Filter",
+        "title": "Analysis verdict filter",
         "type": "array"
       },
       "include_screenshots": {
         "default": true,
-        "description": "If set to true, the report includes the screenshots of the submitted URL or looked-up hash (the top-level samples only \u2014 never of their child samples).",
-        "title": "Include Screenshots",
+        "description": "If set to true, the report includes the screenshots of the submitted or looked-up samples (the top-level samples only \u2014 never of their child samples).",
+        "title": "Include screenshots",
         "type": "boolean"
       }
     },

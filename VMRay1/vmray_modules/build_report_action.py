@@ -1,6 +1,6 @@
 """BuildReport — the full VMRay report for a set of samples.
 
-Takes sample IDs or submission IDs (e.g. from SubmitFileSample, each resolved to its
+Takes sample IDs or submission IDs (e.g. from SubmitSampleAndWait, each resolved to its
 sample), fetches every sample — lookup and submit responses are incomplete — and attaches, per sample, its
 sub-resources: analyses of the latest submission, VTIs, MITRE ATT&CK, IOCs, classifications, threat names and
 screenshots, then recurses into child samples down to `max_recursion_depth`. Child samples only get their IOCs —

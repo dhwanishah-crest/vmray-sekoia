@@ -5,7 +5,7 @@ Look up file hashes in VMRay, detonate URLs or scan files from a Sekoia.io playb
 ### Requirements
 
 - A VMRay Platform account, cloud (e.g. `https://eu.cloud.vmray.com`, `https://us.cloud.vmray.com`) or on-premises, running VMRay Platform **2026.2 or later**. On older versions, the recursive threat names and classifications of child samples are missing from the report.
-- To detonate URLs or files (`Submit URL Sample`, `Submit File Sample`), a VMRay plan that allows submissions: VMRay rejects submissions on the DeepResponse plan. Looking up hashes works on every plan and consumes no quota; every URL or file detonation consumes quota.
+- To detonate URLs or files (`Submit URL And Wait`, `Submit Sample And Wait`), a VMRay plan that allows submissions: VMRay rejects submissions on the DeepResponse plan. Looking up hashes works on every plan and consumes no quota; every URL or file detonation consumes quota.
 
 ### In VMRay: Create an API key
 
@@ -31,12 +31,13 @@ Look up file hashes in VMRay, detonate URLs or scan files from a Sekoia.io playb
 
 8. Open or create a playbook, add the VMRay1 actions, and select the VMRay1 account you just connected in each one's `Account` tab. A typical chain:
 
-    - `Get Samples By Hash` (file hashes of the alert) or `Submit URL Sample` (a URL of the alert), or
+    - `Get Samples By Hash` (file hashes of the alert) or `Submit URL And Wait` (a URL of the alert), or
     - an EDR action such as SentinelOne's `Get malwares from threat`, which puts the file in the run's storage,
-    - `Submit File Sample` with their `files` (it waits for the analysis), or `Start File Submission` / `Start URL Submission`, which return at once: then a Sekoia `Wait` and `Check Submission Status` with the `submission_ids` they return,
+    - `Submit Sample And Wait` with their `files` (it waits for the analysis), or `Submit Sample` / `Submit URL`, which return at once: then a Sekoia `Wait` and `Get Submission Result` with the `submission_ids` they return,
+    - optionally `Get Sample IOCs`, `Get Sample VTIs`, `Get Sample Mitre Attack Techniques`, `Get Sample Screenshots`, `Get Sample Report` or `Get Analysis Archive` to read one part of the analysis without building the whole report,
     - optionally `Get Child Samples` on the file's `sample_ids` to see what VMRay found inside it (a `has_children` branch skips the rest when there is nothing), and `Get Child Sample Report` for one chosen child,
     - then `Build Report` with the `sample_ids` or `submission_ids` they return,
     - then `Render Report` and the Sekoia.io `Comment Alert` action to post the report on the alert, with a `Foreach` over `screenshot_comments` for the screenshots,
     - and `Extract IOCs` with the Sekoia.io `Add IOC to IOC Collection` action to push the indicators, with a `Foreach` over `indicator_groups`.
 
-Ready-made playbooks are in `playbooks/templates/`: "VMRay1: Alert Created - Scan SentinelOne file", which scans the file of a SentinelOne threat, and a Manual-trigger copy of it for testing. After creating a playbook from one, select your VMRay1 account on the VMRay1 nodes and set the IOC collection on `Add IOCs to IOC Collection`. Every file submitted consumes quota.
+Ready-made playbooks are in `playbooks/templates/`: "VMRay1: Scan URL" (run by an analyst, needs no EDR), "VMRay1: Alert Created - Scan SentinelOne file", which scans the file of a SentinelOne threat, and a Manual-trigger copy of it for testing. After creating a playbook from one, select your VMRay1 account on the VMRay1 nodes and set the IOC collection on `Add IOCs to IOC Collection`. Every file submitted consumes quota.

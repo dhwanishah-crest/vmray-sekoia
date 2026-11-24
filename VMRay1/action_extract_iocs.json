@@ -65,6 +65,7 @@
             "type": "string"
           },
           "indicators": {
+            "description": "The indicator values of this type.",
             "items": {
               "type": "string"
             },
@@ -81,6 +82,7 @@
     },
     "properties": {
       "indicators": {
+        "description": "Every indicator found, typed as Add IOC to IOC Collection expects (indicator_type and value).",
         "items": {
           "$ref": "#/$defs/Indicator"
         },

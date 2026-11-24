@@ -14,7 +14,7 @@ from typing import Any
 
 from vmray_modules.base import VMRayAction
 from vmray_modules.client import UnknownHashTypeError, VMRayClientError
-from vmray_modules.models import GetSamplesByHashArguments, GetSamplesByHashResults
+from vmray_modules.sample_models import GetSamplesByHashArguments, GetSamplesByHashResults
 
 
 class GetSamplesByHash(VMRayAction):

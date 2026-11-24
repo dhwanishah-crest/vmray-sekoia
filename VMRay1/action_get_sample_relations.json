@@ -29,6 +29,7 @@
       },
       "relation_count": {
         "default": 0,
+        "description": "How many relation records VMRay returned.",
         "title": "Relation Count",
         "type": "integer"
       },

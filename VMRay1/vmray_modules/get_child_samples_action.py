@@ -12,13 +12,12 @@ the rest. Costs no quota. A child VMRay cannot return lands in `errors` and the 
 from vmray_modules.base import VMRayAction
 from vmray_modules.child_helpers import (
     check_min_verdict,
-    get_sample_object,
-    resolve_sample_id,
     summarise_child,
     verdict_rank,
     walk_children,
 )
-from vmray_modules.models import ChildSample, GetChildSamplesArguments, GetChildSamplesResults
+from vmray_modules.sample_helpers import get_sample_object, resolve_sample_id
+from vmray_modules.sample_models import ChildSample, GetChildSamplesArguments, GetChildSamplesResults
 
 
 class GetChildSamples(VMRayAction):

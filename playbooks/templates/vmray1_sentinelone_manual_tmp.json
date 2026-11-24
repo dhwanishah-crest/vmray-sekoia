@@ -138,7 +138,7 @@
       }
     },
     "6": {
-      "name": "VMRay: Start File Submission",
+      "name": "VMRay: Submit Sample",
       "type": "action",
       "outputs": {
         "submitted": [
@@ -419,7 +419,7 @@
       "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
     },
     "20": {
-      "name": "VMRay: Check Submission Status (1)",
+      "name": "VMRay: Get Submission Result (1)",
       "type": "action",
       "outputs": {
         "completed": [
@@ -462,7 +462,7 @@
       "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
     },
     "22": {
-      "name": "VMRay: Check Submission Status (2)",
+      "name": "VMRay: Get Submission Result (2)",
       "type": "action",
       "outputs": {
         "completed": [
@@ -505,7 +505,7 @@
       "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
     },
     "24": {
-      "name": "VMRay: Check Submission Status (3)",
+      "name": "VMRay: Get Submission Result (3)",
       "type": "action",
       "outputs": {
         "completed": [

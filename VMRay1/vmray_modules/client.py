@@ -126,6 +126,8 @@ class VMRayClient:
     _sample_submissions = "/rest/submission/sample/{sample_id}"
     _submission_analyses = "/rest/analysis/submission/{submission_id}"
     _analysis_archive = "/rest/analysis/{analysis_id}/archive/{archive_path}"
+    _analysis_archive_whole = "/rest/analysis/{analysis_id}/archive"
+    _sample_report = "/rest/sample/{sample_id}/report"
     _sample_relations_of_sample = "/rest/sample_relation/sample/{sample_id}"
     _sample_relations_of_submission = "/rest/sample_relation/submission/{submission_id}"
     _continuation = "/rest/continuation/{continuation_id}"
@@ -356,6 +358,39 @@ class VMRayClient:
         )
         self._raise_for_status(res)
         return res.content
+
+    def _download(self, path: str, max_bytes: int) -> tuple[bytes, str]:
+        """GET a binary answer and return (its bytes, its Content-Type). Fails with a clear error instead of
+        loading an answer larger than `max_bytes` into memory."""
+        res = self.session.get(self._url(path), stream=True)
+        try:
+            self._raise_for_status(res)
+            too_big = VMRayAPIError(f"VMRay's answer is larger than {max_bytes // (1024 * 1024)} MB")
+            declared = res.headers.get("Content-Length", "")
+            if declared.isdigit() and int(declared) > max_bytes:
+                raise too_big
+            chunks: list[bytes] = []
+            size = 0
+            for chunk in res.iter_content(chunk_size=1024 * 1024):
+                size += len(chunk)
+                if size > max_bytes:
+                    raise too_big
+                chunks.append(chunk)
+            return b"".join(chunks), res.headers.get("Content-Type", "")
+        finally:
+            res.close()
+
+    def download_analysis_archive(self, analysis_id: int, archive_path: str | None, max_bytes: int) -> bytes:
+        """The whole analysis archive (a ZIP), or one file of it when `archive_path` is given."""
+        if archive_path:
+            path = self._analysis_archive.format(analysis_id=analysis_id, archive_path=archive_path)
+        else:
+            path = self._analysis_archive_whole.format(analysis_id=analysis_id)
+        return self._download(path, max_bytes)[0]
+
+    def download_sample_report(self, sample_id: int, max_bytes: int) -> tuple[bytes, str]:
+        """GET /sample/{id}/report exactly as VMRay sends it: (bytes, Content-Type)."""
+        return self._download(self._sample_report.format(sample_id=sample_id), max_bytes)
 
     @staticmethod
     def _filter_analyses_by_verdict(

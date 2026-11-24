@@ -5,7 +5,8 @@ import pytest
 from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.get_child_samples_action import GetChildSamples
-from vmray_modules.models import GetChildSamplesArguments, GetChildSamplesResults, VMRayConfiguration, VMRayModule
+from vmray_modules.models import VMRayConfiguration, VMRayModule
+from vmray_modules.sample_models import GetChildSamplesArguments, GetChildSamplesResults
 
 BASE_URL = "https://eu.cloud.vmray.com"
 MANIFEST = Path(__file__).parents[1] / "action_get_child_samples.json"

@@ -13,12 +13,7 @@ from pydantic import ValidationError
 
 from vmray_modules.base import UnsafeDataPathError, VMRayAction
 from vmray_modules.client import VMRayClientError
-from vmray_modules.models import (
-    StartFileSubmissionArguments,
-    StartUrlSubmissionArguments,
-    Submission,
-    SubmissionOptions,
-)
+from vmray_modules.submission_models import Submission, SubmissionOptions, SubmitSampleArguments, SubmitUrlArguments
 
 _FORM_OPTIONS = {
     "enable_reputation",
@@ -70,7 +65,7 @@ def submission_state(submission: Submission) -> str:
     return "failed" if submission.submission_has_errors else "finished"
 
 
-def submit_url(action: VMRayAction, arguments: StartUrlSubmissionArguments) -> tuple[list[int], list[dict[str, Any]]]:
+def submit_url(action: VMRayAction, arguments: SubmitUrlArguments) -> tuple[list[int], list[dict[str, Any]]]:
     """POST the URL and return the IDs of the submissions VMRay started and the errors it gave. No ID means VMRay
     took nothing: the reason is in the errors."""
     try:
@@ -87,7 +82,7 @@ def submit_url(action: VMRayAction, arguments: StartUrlSubmissionArguments) -> t
 
 
 def upload_files(
-    action: VMRayAction, arguments: StartFileSubmissionArguments
+    action: VMRayAction, arguments: SubmitSampleArguments
 ) -> tuple[list[str], list[int], list[dict[str, Any]]]:
     """Upload each file of the playbook run's data storage and return (the files VMRay accepted, the IDs of the
     submissions it started, the errors).

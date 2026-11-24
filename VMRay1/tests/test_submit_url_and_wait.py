@@ -4,7 +4,7 @@ from urllib.parse import parse_qs
 import pytest
 
 from vmray_modules.models import VMRayConfiguration, VMRayModule
-from vmray_modules.submit_url_sample_action import SubmitUrlSample
+from vmray_modules.submit_url_and_wait_action import SubmitUrlAndWait
 
 BASE_URL = "https://eu.cloud.vmray.com"
 URL = "http://evil.example/payload"
@@ -13,7 +13,7 @@ URL = "http://evil.example/payload"
 def make_action():
     m = VMRayModule()
     m.configuration = VMRayConfiguration(base_url=BASE_URL, api_key="test-key")
-    return SubmitUrlSample(module=m)
+    return SubmitUrlAndWait(module=m)
 
 
 def ok(data):
