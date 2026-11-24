@@ -1,0 +1,15 @@
+{
+  "configuration": {
+    "properties": {},
+    "title": "DownloadConfiguration",
+    "type": "object"
+  },
+  "description": "Test helpers for playbooks: download a file (for example a zip) into the playbook run's storage, to feed other integrations",
+  "name": "Test",
+  "slug": "test",
+  "categories": [
+    "Generic"
+  ],
+  "uuid": "7593a534-1baf-4bcf-a01e-4b103176749e",
+  "version": "1.0.0"
+}

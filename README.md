@@ -8,6 +8,7 @@ VMRay1 integration for Sekoia.io: a Sekoia automation module and the playbooks t
 |---|---|
 | [`VMRay1/`](VMRay1/) | The automation module. [`VMRay1/CONFIGURE.md`](VMRay1/CONFIGURE.md) covers setup; [`VMRay1/README.md`](VMRay1/README.md) covers the actions, the playbooks, the comment layout, known limitations and development. |
 | [`VMRay1/CHANGELOG.md`](VMRay1/CHANGELOG.md) | Release history. |
+| [`Test/`](Test/) | A second, separate integration, "Test", with one action, Download File, that saves a file (for example a zip) from a URL in the playbook run's storage so every VMRay1 action can be tried on it. [`Test/CONFIGURE.md`](Test/CONFIGURE.md) covers setup. |
 | [`playbooks/templates/`](playbooks/templates/) | The playbooks that use the module, listed in `playbooks.json`. |
 
 ## Playbooks

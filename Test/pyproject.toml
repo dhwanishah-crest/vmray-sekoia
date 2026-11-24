@@ -1,0 +1,57 @@
+[project]
+name = "automation-module-test"
+version = "1.0.0"
+description = "Test helpers for Sekoia playbooks: download a file into the playbook run's storage"
+authors = []
+requires-python = ">=3.11,<4"
+dependencies = [
+	"pydantic>=2.13.5",
+	"requests>=2.34.2",
+	"sekoia-automation-sdk>=1.26.0,<2",
+]
+
+[dependency-groups]
+dev = [
+	"pytest>=9.0.3,<10",
+	"pytest-cov>=7.0.0,<8",
+	"requests-mock",
+]
+lint = [
+	"ruff>=0.14",
+	"mypy",
+]
+
+[tool.uv]
+package = false
+default-groups = ["dev", "lint"]
+
+[tool.ruff]
+line-length = 119
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["A", "ARG", "E", "F", "I", "N", "RUF", "UP", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG"]
+
+[tool.mypy]
+python_version = "3.11"
+install_types = true
+non_interactive = true
+ignore_missing_imports = true
+show_column_numbers = true
+exclude = ["tests/"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = """
+	--cov=download_modules
+	--cov-report=term-missing:skip-covered
+	-ra
+"""
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+omit = ["tests/*", "main.py"]

@@ -1,0 +1,120 @@
+{
+  "name": "Download File",
+  "slug": "download_file",
+  "description": "Download a file (for example a zip) from a URL into the playbook run's storage, in the same `files` format as SentinelOne's Get malwares from threat, so it can be given to Submit Sample.",
+  "uuid": "1c9c5492-e9cc-4d45-9ac4-e17c24d0c8f0",
+  "docker_parameters": "DownloadFile",
+  "arguments": {
+    "properties": {
+      "url": {
+        "description": "The http:// or https:// address of the file to download, e.g. a zip file. Only public addresses are allowed.",
+        "minLength": 1,
+        "title": "URL",
+        "type": "string"
+      },
+      "file_name": {
+        "default": "",
+        "description": "The name to save the file under. Empty: the name the server gives it, or the last part of the URL.",
+        "title": "File name",
+        "type": "string"
+      },
+      "max_size_mb": {
+        "default": 50,
+        "description": "The largest file to accept, in megabytes. A bigger file is dropped and the action fails.",
+        "maximum": 500,
+        "minimum": 1,
+        "title": "Max size (MB)",
+        "type": "integer"
+      },
+      "timeout": {
+        "default": 120,
+        "description": "The most time, in seconds, the whole download may take.",
+        "exclusiveMinimum": 0,
+        "maximum": 1800,
+        "title": "Timeout (s)",
+        "type": "number"
+      },
+      "verify_ssl": {
+        "default": true,
+        "description": "Verify the TLS certificate of the server. Turn it off only for a test server with a self-signed certificate.",
+        "title": "Verify SSL",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "title": "DownloadFileArguments",
+    "type": "object"
+  },
+  "results": {
+    "$defs": {
+      "FileRef": {
+        "properties": {
+          "path": {
+            "description": "The file's path in the playbook run's storage.",
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "FileRef",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "files": {
+        "description": "The downloaded file as `[{\"path\": ...}]`, the shape SentinelOne's Get malwares from threat returns: give it as is to Submit Sample's `files`.",
+        "items": {
+          "$ref": "#/$defs/FileRef"
+        },
+        "title": "Files",
+        "type": "array"
+      },
+      "file_name": {
+        "description": "The name the file was saved under.",
+        "title": "File Name",
+        "type": "string"
+      },
+      "size": {
+        "description": "Size of the file in bytes.",
+        "title": "Size",
+        "type": "integer"
+      },
+      "sha256": {
+        "description": "SHA-256 of the file.",
+        "title": "Sha256",
+        "type": "string"
+      },
+      "content_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The server's Content-Type.",
+        "title": "Content Type"
+      },
+      "url": {
+        "description": "The address the file came from, after any redirects.",
+        "title": "Url",
+        "type": "string"
+      }
+    },
+    "required": [
+      "files",
+      "file_name",
+      "size",
+      "sha256",
+      "url"
+    ],
+    "title": "DownloadFileResults",
+    "type": "object"
+  }
+}
