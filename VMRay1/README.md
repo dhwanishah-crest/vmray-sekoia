@@ -21,7 +21,7 @@ hashes ──► Get Samples By Hash ──────────────�
 
 1. **Get something to analyse.** An EDR action such as SentinelOne's "Get malwares from threat" saves a file on the playbook run's storage and returns `files`, a list of `{"path": ...}`. Or use a URL, or look hashes up with `Get Samples By Hash` (no quota).
 2. **Submit it.** `Submit Sample` / `Submit URL` start the analysis and return at once with the submission IDs. Submitting consumes quota.
-3. **Follow it.** `Get Submission Result` waits until the submissions have finished and returns them (`completed`, `pending` when the wait timed out, or `failed`). One block covers the whole wait, because a playbook has no loop.
+3. **Follow it.** `Get Submission Result` waits until the submissions have finished and returns them (`completed`, or `failed` when one failed or the wait timed out). One block covers the whole wait, because a playbook has no loop.
 4. **Read the result.** Take only what you need with the `Get Sample ...` actions, look inside the sample with `Get Child Samples` and `Get Sample Relations`, or have `Build Report` gather everything into one JSON file on the run's storage. Only the file's path travels between nodes: a report with screenshots is far larger than Sekoia accepts as an action argument (SYM216).
 5. **Use the report.** `Render Report` turns it into the alert comment; `Extract IOCs` turns it into indicators for an IOC collection. Neither calls VMRay or Sekoia.
 
@@ -33,7 +33,7 @@ hashes ──► Get Samples By Hash ──────────────�
 |---|---|---|---|---|
 | Submit and follow | Submit Sample | uploads files and returns at once | `submitted` / `submission_failed` | yes |
 | | Submit URL | submits a URL and returns at once | `submitted` / `submission_failed` | yes |
-| | Get Submission Result | waits until submissions have finished | `completed` / `pending` / `failed` | no |
+| | Get Submission Result | waits until submissions have finished | `completed` / `failed` | no |
 | Look up | Get Samples By Hash | finds the samples VMRay already knows for hashes | `found` / `not_found` | no |
 | Read one part of a sample | Get Sample IOCs | the IOCs by category | `found` / `not_found` | no |
 | | Get Sample Mitre Attack Techniques | the ATT&CK techniques | `found` / `not_found` | no |
@@ -110,19 +110,18 @@ Waits until submissions have finished, then returns them. It makes a `GET /submi
 | Argument | Default | Notes |
 |---|---|---|
 | `submission_ids` | required | one ID or a list; duplicates are checked once |
-| `timeout` | `1800` | seconds to wait for every submission to finish; then the `pending` branch. `0` checks once and returns at once |
+| `timeout` | `1800` | seconds to wait for every submission to finish; then the `failed` branch with `timed_out` true |
 | `poll_interval` | `10` | seconds between two checks |
 
 **Outputs:**
-- `completed`: nothing is pending and at least one submission finished without error. `submission_ids` and `sample_ids` are ready for `BuildReport`.
-- `pending`: the wait timed out with a submission still running (`timed_out` is true), or `timeout` was `0` and one is running. The submissions that already finished are in the results too.
-- `failed`: every submission finished with an error.
+- `completed`: every submission has finished and at least one finished without error. `submission_ids` and `sample_ids` are ready for `BuildReport`.
+- `failed`: nothing to build a report from: every submission finished with an error, or the wait timed out with a submission still running (`timed_out` is true and `pending_submission_ids` lists it). The submissions that did finish are in the results either way.
 
 **Results:** `all_finished`, `timed_out`, `submissions`, `submission_ids` and `sample_ids` (finished without error), `pending_submission_ids`, `failed_submission_ids`, `errors`.
 
-A submission that cannot be checked stays pending instead of failing, because the next check may work; if it is still unreachable when the wait ends, `errors` says why. When not one submission could be checked in three rounds in a row (a wrong API key, VMRay down) the action fails, so a playbook never reads "pending" when nothing was looked at.
+A submission that cannot be checked is not called failed on the first try, because the next check may work; if it is still unreachable when the wait ends, `errors` says why. When not one submission could be checked in three rounds in a row (a wrong API key, VMRay down) the action raises an error, so a playbook never reads "timed out" when nothing was looked at.
 
-**In a playbook** it is one block between the submit and the report: `Submit URL` (`submitted`) → `Get Submission Result` → `completed` goes on to `Build Report`; `pending` and `failed` go to a comment that the analysis did not finish. The run stays open while the action waits, up to `timeout` (30 minutes by default).
+**In a playbook** it is one block between the submit and the report: `Submit URL` (`submitted`) → `Get Submission Result` → `completed` goes on to `Build Report`; `failed` goes to a comment that the analysis did not finish. The run stays open while the action waits, up to `timeout` (30 minutes by default).
 
 ### `GetSamplesByHash` - Get Samples By Hash
 

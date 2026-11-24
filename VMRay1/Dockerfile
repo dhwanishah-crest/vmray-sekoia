@@ -1,13 +1,13 @@
-FROM python:3.14-bookworm
+FROM python:3.14-slim-bookworm
 
 WORKDIR /app
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install dependencies
+# Install the runtime dependencies only: no test tools and no lint tools (ruff, mypy)
 COPY pyproject.toml uv.lock /app/
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-default-groups --no-install-project
 
 # Make the project virtual environment the default interpreter
 ENV PATH="/app/.venv/bin:$PATH"

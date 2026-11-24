@@ -13,6 +13,7 @@ from vmray_modules.submission_models import GetSubmissionResultArguments, GetSub
 from vmray_modules.submit_sample_action import SubmitSample
 
 ROOT = Path(__file__).parents[1]
+FAST = {"timeout": 0.02, "poll_interval": 0.01}  # waits a few polls, then times out
 
 
 def test_get_submission_result_completed_when_every_submission_finished(requests_mock):
@@ -21,7 +22,7 @@ def test_get_submission_result_completed_when_every_submission_finished(requests
     mock_submission(requests_mock, 113, sample_id=6)
     action = make(GetSubmissionResult)
 
-    result = action.run({"timeout": 0, "submission_ids": [111, 112, 113]})
+    result = action.run({**FAST, "submission_ids": [111, 112, 113]})
 
     assert result["all_finished"] is True
     assert result["submission_ids"] == [111, 112, 113]
@@ -31,26 +32,20 @@ def test_get_submission_result_completed_when_every_submission_finished(requests
     assert action.outputs == {"completed": True}
 
 
-def test_get_submission_result_pending_while_a_submission_still_runs_and_keeps_what_finished(requests_mock):
+def test_get_submission_result_fails_at_the_timeout_with_a_submission_running_and_keeps_the_rest(
+    requests_mock,
+):
     mock_submission(requests_mock, 111, sample_id=5)
     mock_submission(requests_mock, 112, finished=False)
     action = make(GetSubmissionResult)
 
-    result = action.run({"timeout": 0, "submission_ids": [111, 112]})
+    result = action.run({**FAST, "submission_ids": [111, 112]})
 
     assert result["all_finished"] is False
-    assert result["timed_out"] is False  # nothing was waited for
+    assert result["timed_out"] is True
     assert result["pending_submission_ids"] == [112]
     assert result["submission_ids"] == [111] and result["sample_ids"] == [5]
-    assert action.outputs == {"pending": True}
-
-
-def test_get_submission_result_with_timeout_zero_checks_once_and_returns_at_once(requests_mock):
-    poll = mock_submission(requests_mock, 111, finished=False)
-
-    make(GetSubmissionResult).run({"timeout": 0, "submission_ids": [111]})
-
-    assert poll.call_count == 1
+    assert action.outputs == {"failed": True}
 
 
 def test_get_submission_result_failed_when_every_submission_finished_with_an_error(requests_mock):
@@ -58,7 +53,7 @@ def test_get_submission_result_failed_when_every_submission_finished_with_an_err
     mock_submission(requests_mock, 112, has_errors=True)
     action = make(GetSubmissionResult)
 
-    result = action.run({"timeout": 0, "submission_ids": [111, 112]})
+    result = action.run({**FAST, "submission_ids": [111, 112]})
 
     assert result["all_finished"] is True
     assert result["failed_submission_ids"] == [111, 112]
@@ -72,24 +67,24 @@ def test_get_submission_result_completed_when_some_failed_and_the_rest_finished(
     mock_submission(requests_mock, 112, has_errors=True)
     action = make(GetSubmissionResult)
 
-    result = action.run({"timeout": 0, "submission_ids": [111, 112]})
+    result = action.run({**FAST, "submission_ids": [111, 112]})
 
     assert result["submission_ids"] == [111] and result["failed_submission_ids"] == [112]
     assert action.outputs == {"completed": True}
 
 
-def test_get_submission_result_a_submission_that_cannot_be_checked_stays_pending_with_the_reason(requests_mock):
+def test_get_submission_result_a_submission_that_cannot_be_checked_is_reported_with_the_reason(requests_mock):
     mock_submission(requests_mock, 111, sample_id=5)
     requests_mock.get(f"{BASE_URL}/rest/submission/112", status_code=404, json={"error_msg": "no such submission"})
     action = make(GetSubmissionResult)
 
-    result = action.run({"timeout": 0, "submission_ids": [111, 112]})
+    result = action.run({**FAST, "submission_ids": [111, 112]})
 
     assert result["pending_submission_ids"] == [112]
     assert result["failed_submission_ids"] == []  # not failed: the next check may well work
     assert "could not be checked" in result["errors"][0]["error_msg"]
     assert "no such submission" in result["errors"][0]["error_msg"]
-    assert action.outputs == {"pending": True}
+    assert action.outputs == {"failed": True}
 
 
 def test_get_submission_result_fails_when_not_one_submission_could_be_checked(requests_mock):
@@ -97,14 +92,14 @@ def test_get_submission_result_fails_when_not_one_submission_could_be_checked(re
     requests_mock.get(f"{BASE_URL}/rest/submission/112", status_code=401, json={"error_msg": "bad key"})
 
     with pytest.raises(Exception, match=r"No submission could be checked.*bad key"):
-        make(GetSubmissionResult).run({"timeout": 0, "submission_ids": [111, 112]})
+        make(GetSubmissionResult).run({"timeout": 5, "poll_interval": 0.01, "submission_ids": [111, 112]})
 
 
 def test_get_submission_result_an_answer_that_is_not_a_submission_is_unchecked_not_failed(requests_mock):
     mock_submission(requests_mock, 111, sample_id=5)
     requests_mock.get(f"{BASE_URL}/rest/submission/112", json=ok({"unexpected": True}))
 
-    result = make(GetSubmissionResult).run({"timeout": 0, "submission_ids": [111, 112]})
+    result = make(GetSubmissionResult).run({**FAST, "submission_ids": [111, 112]})
 
     assert result["pending_submission_ids"] == [112]
 
@@ -112,8 +107,8 @@ def test_get_submission_result_an_answer_that_is_not_a_submission_is_unchecked_n
 def test_get_submission_result_takes_one_id_or_a_list_and_checks_duplicates_once(requests_mock):
     poll = mock_submission(requests_mock, 111, sample_id=5)
 
-    assert make(GetSubmissionResult).run({"timeout": 0, "submission_ids": 111})["submission_ids"] == [111]
-    assert make(GetSubmissionResult).run({"timeout": 0, "submission_ids": [111, 111]})["submission_ids"] == [111]
+    assert make(GetSubmissionResult).run({**FAST, "submission_ids": 111})["submission_ids"] == [111]
+    assert make(GetSubmissionResult).run({**FAST, "submission_ids": [111, 111]})["submission_ids"] == [111]
     assert poll.call_count == 2  # one poll per call
 
 
@@ -143,9 +138,9 @@ def test_get_submission_result_takes_what_submit_sample_returns(requests_mock, s
     started = make(SubmitSample).run({"files": [SHA1]})
     mock_submission(requests_mock, 111, finished=False)
 
-    first = make(GetSubmissionResult).run({"timeout": 0, "submission_ids": started["submission_ids"]})
+    first = make(GetSubmissionResult).run({**FAST, "submission_ids": started["submission_ids"]})
     mock_submission(requests_mock, 111, sample_id=222)
-    second = make(GetSubmissionResult).run({"timeout": 0, "submission_ids": started["submission_ids"]})
+    second = make(GetSubmissionResult).run({**FAST, "submission_ids": started["submission_ids"]})
 
     assert first["pending_submission_ids"] == [111]
     assert second["submission_ids"] == [111] and second["sample_ids"] == [222]  # input for Build Report
@@ -190,7 +185,7 @@ def test_get_submission_result_by_default_waits_without_a_timeout_of_its_own_cho
     assert arguments.timeout == 1800 and arguments.poll_interval == 10
 
 
-def test_get_submission_result_takes_the_pending_branch_when_the_wait_times_out(requests_mock):
+def test_get_submission_result_takes_the_failed_branch_when_the_wait_times_out(requests_mock):
     poll = requests_mock.get(f"{BASE_URL}/rest/submission/111", seq("running"))
     action = make(GetSubmissionResult)
 
@@ -199,7 +194,7 @@ def test_get_submission_result_takes_the_pending_branch_when_the_wait_times_out(
     assert poll.call_count >= 2  # it did poll more than once before giving up
     assert result["timed_out"] is True and result["all_finished"] is False
     assert result["pending_submission_ids"] == [111] and result["submission_ids"] == []
-    assert action.outputs == {"pending": True}
+    assert action.outputs == {"failed": True}
 
 
 def test_get_submission_result_asks_again_only_about_the_submissions_still_running(requests_mock):
@@ -265,7 +260,7 @@ def test_get_submission_result_keeps_the_reason_of_a_submission_it_never_managed
 
     assert result["pending_submission_ids"] == [112] and result["submission_ids"] == [111]
     assert "no such submission" in result["errors"][0]["error_msg"]
-    assert action.outputs == {"pending": True}
+    assert action.outputs == {"failed": True}
 
 
 def test_get_submission_result_fails_after_three_rounds_in_which_nothing_could_be_checked(requests_mock):
@@ -280,6 +275,7 @@ def test_get_submission_result_fails_after_three_rounds_in_which_nothing_could_b
 @pytest.mark.parametrize(
     "arguments",
     [
+        {"timeout": 0},
         {"timeout": -1},
         {"timeout": float("nan")},
         {"timeout": float("inf")},

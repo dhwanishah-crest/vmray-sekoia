@@ -388,9 +388,6 @@
         "completed": [
           "8"
         ],
-        "pending": [
-          "9"
-        ],
         "failed": [
           "9"
         ]
@@ -407,7 +404,7 @@
       "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
       "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
       "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899",
-      "description": "Waits (up to 30 minutes) until VMRay has finished the analysis: completed goes on to the report, pending means it was still running when the wait ended, failed means VMRay finished it with an error"
+      "description": "Waits (up to 30 minutes) until VMRay has finished the analysis: completed goes on to the report; failed means VMRay finished it with an error, or it was still running when the wait ended"
     },
     "25": {
       "name": "Comment Alert (File Not Submitted)",

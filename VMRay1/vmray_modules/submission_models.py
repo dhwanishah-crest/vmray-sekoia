@@ -231,11 +231,11 @@ class GetSubmissionResultArguments(BaseModel):
     )
     timeout: float = Field(
         default=1800,
-        ge=0,
+        gt=0,
         allow_inf_nan=False,
         title="Wait timeout (s)",
         description="Maximum time (seconds) to wait for every submission to finish. When it runs out the action "
-        "takes the `pending` branch. 0 checks once and returns at once.",
+        "takes the `failed` branch and `timed_out` is true.",
     )
     poll_interval: float = Field(
         default=10,
@@ -282,7 +282,7 @@ class GetSubmissionResultResults(BaseModel):
     pending_submission_ids: list[int] = Field(
         default_factory=list,
         title="Pending Submission IDs",
-        description="Submissions still running when the wait ended, or that could not be checked.",
+        description="Submissions still running when the wait timed out, or that could not be checked.",
     )
     failed_submission_ids: list[int] = Field(
         default_factory=list,

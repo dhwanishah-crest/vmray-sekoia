@@ -1,7 +1,7 @@
 {
   "name": "Get Submission Result",
   "slug": "get_submission_result",
-  "description": "Wait until VMRay submissions have finished, then return them: completed, still pending when the wait timed out, or failed. Costs no quota.",
+  "description": "Wait until VMRay submissions have finished, then return them: completed, or failed when one finished with an error or the wait timed out. Costs no quota.",
   "uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
   "docker_parameters": "GetSubmissionResult",
   "arguments": {
@@ -16,8 +16,8 @@
       },
       "timeout": {
         "default": 1800,
-        "description": "Maximum time (seconds) to wait for every submission to finish. When it runs out the action takes the `pending` branch. 0 checks once and returns at once.",
-        "minimum": 0,
+        "description": "Maximum time (seconds) to wait for every submission to finish. When it runs out the action takes the `failed` branch and `timed_out` is true.",
+        "exclusiveMinimum": 0,
         "title": "Wait timeout (s)",
         "type": "number"
       },
@@ -186,7 +186,7 @@
         "type": "array"
       },
       "pending_submission_ids": {
-        "description": "Submissions still running when the wait ended, or that could not be checked.",
+        "description": "Submissions still running when the wait timed out, or that could not be checked.",
         "items": {
           "type": "integer"
         },
