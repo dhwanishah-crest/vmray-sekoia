@@ -1,7 +1,7 @@
 """What the actions that start from a VMRay sample share: finding the sample, and saving a downloaded file.
 
 Every "Get ..." action takes a `sample_id` or, when that is empty, the `submission_id` of the submission that made
-the sample (e.g. the `submission_ids` of Submit Sample And Wait or Get Submission Result).
+the sample (e.g. the `submission_ids` of Get Submission Result).
 """
 
 import hashlib
@@ -23,7 +23,7 @@ def resolve_sample_id(client: VMRayClient, sample_id: int | None, submission_id:
         return sample_id
     if submission_id is None:
         raise MissingActionArgumentError("sample_id or submission_id")
-    submission = client.update_submission(submission_id)
+    submission = client.get_submission(submission_id)
     resolved = submission.get("submission_sample_id") if isinstance(submission, dict) else None
     if resolved is None:
         raise ValueError(f"VMRay returned no sample for submission {submission_id}")

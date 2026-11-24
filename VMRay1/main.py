@@ -11,19 +11,15 @@ from vmray_modules.get_sample_screenshots_action import GetSampleScreenshots
 from vmray_modules.get_sample_vtis_action import GetSampleVtis
 from vmray_modules.get_samples_by_hash_action import GetSamplesByHash
 from vmray_modules.get_submission_result_action import GetSubmissionResult
-from vmray_modules.models import VMRayModule
+from vmray_modules.module_models import VMRayModule
 from vmray_modules.render_report_action import RenderReport
 from vmray_modules.submit_sample_action import SubmitSample
-from vmray_modules.submit_sample_and_wait_action import SubmitSampleAndWait
 from vmray_modules.submit_url_action import SubmitUrl
-from vmray_modules.submit_url_and_wait_action import SubmitUrlAndWait
 
 if __name__ == "__main__":
     module = VMRayModule()
     module.register(BuildReport, "BuildReport")
     module.register(ExtractIocs, "ExtractIocs")
-    module.register(SubmitUrlAndWait, "SubmitUrlAndWait")
-    module.register(SubmitSampleAndWait, "SubmitSampleAndWait")
     module.register(SubmitUrl, "SubmitUrl")
     module.register(SubmitSample, "SubmitSample")
     module.register(GetSubmissionResult, "GetSubmissionResult")

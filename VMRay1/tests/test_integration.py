@@ -14,7 +14,7 @@ from sekoia_automation.configuration.filesystem import FileSystemConfiguration
 
 from vmray_modules.build_report_action import BuildReport
 from vmray_modules.extract_iocs_action import ExtractIocs
-from vmray_modules.models import VMRayModule
+from vmray_modules.module_models import VMRayModule
 from vmray_modules.render_report_action import RenderReport
 
 BASE_URL = "https://eu.cloud.vmray.com"

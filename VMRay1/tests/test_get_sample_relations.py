@@ -5,7 +5,7 @@ import pytest
 from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.get_sample_relations_action import GetSampleRelations, related_sample_ids
-from vmray_modules.models import VMRayConfiguration, VMRayModule
+from vmray_modules.module_models import VMRayConfiguration, VMRayModule
 from vmray_modules.sample_models import GetSampleRelationsArguments, GetSampleRelationsResults
 
 BASE_URL = "https://eu.cloud.vmray.com"

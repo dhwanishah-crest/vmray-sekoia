@@ -3,8 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from vmray_modules.models import BuildReportArguments
-from vmray_modules.report_models import ExtractIocsArguments, RenderReportArguments
+from vmray_modules.report_models import BuildReportArguments, ExtractIocsArguments, RenderReportArguments
 from vmray_modules.sample_models import (
     GetChildSampleReportArguments,
     GetChildSamplesArguments,
@@ -13,9 +12,7 @@ from vmray_modules.sample_models import (
 )
 from vmray_modules.submission_models import (
     GetSubmissionResultArguments,
-    SubmitSampleAndWaitArguments,
     SubmitSampleArguments,
-    SubmitUrlAndWaitArguments,
     SubmitUrlArguments,
 )
 
@@ -23,8 +20,6 @@ from vmray_modules.submission_models import (
 @pytest.mark.parametrize(
     "model",
     [
-        SubmitSampleAndWaitArguments,
-        SubmitUrlAndWaitArguments,
         GetSamplesByHashArguments,
         GetChildSamplesArguments,
         GetSampleRelationsArguments,
@@ -48,7 +43,7 @@ def test_every_input_shows_in_the_playbook_editor(model):
 
 def test_empty_optional_inputs_still_mean_not_set():
     assert BuildReportArguments().sample_ids is None
-    assert SubmitSampleAndWaitArguments(files=["x"]).enable_reputation is None
+    assert SubmitSampleArguments(files=["x"]).enable_reputation is None
 
 
 def test_render_report_inputs_have_readable_titles_and_a_512_kb_default():

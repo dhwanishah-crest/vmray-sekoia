@@ -14,13 +14,13 @@ See [CONFIGURE.md](CONFIGURE.md): requirements, creating the VMRay API key, conn
 file (EDR) ──► Submit Sample ─┐
 URL ─────────► Submit URL ────┤                                  ┌─► Get Sample IOCs / VTIs / Mitre ATT&CK techniques
                               ├─► Get Submission Result ─► sample ┼─► Get Sample Screenshots / Report, Get Analysis Archive
-(the "And Wait" variants      │        (completed)                ├─► Get Child Samples ─► Get Child Sample Report
- wait inside the action)      │                                   └─► Build Report ─► Render Report ─► alert comment
+                              │        (completed)                ├─► Get Child Samples ─► Get Child Sample Report
+ (a Sekoia Wait comes before) │                                   └─► Build Report ─► Render Report ─► alert comment
 hashes ──► Get Samples By Hash ──────────────────────────────────────────────────────► Extract IOCs ─► IOC collection
 ```
 
 1. **Get something to analyse.** An EDR action such as SentinelOne's "Get malwares from threat" saves a file on the playbook run's storage and returns `files`, a list of `{"path": ...}`. Or use a URL, or look hashes up with `Get Samples By Hash` (no quota).
-2. **Submit it.** `Submit Sample` / `Submit URL` start the analysis and return at once; `Submit Sample And Wait` / `Submit URL And Wait` poll inside the action until it finishes. Submitting consumes quota.
+2. **Submit it.** `Submit Sample` / `Submit URL` start the analysis and return at once: no action waits for an analysis, a playbook puts a Sekoia `Wait` before the check. Submitting consumes quota.
 3. **Follow it.** `Get Submission Result` is one look at whether the submissions finished (`completed`, `pending` or `failed`); a playbook repeats it after a Sekoia `Wait`.
 4. **Read the result.** Take only what you need with the `Get Sample ...` actions, look inside the sample with `Get Child Samples` and `Get Sample Relations`, or have `Build Report` gather everything into one JSON file on the run's storage. Only the file's path travels between nodes: a report with screenshots is far larger than Sekoia accepts as an action argument (SYM216).
 5. **Use the report.** `Render Report` turns it into the alert comment; `Extract IOCs` turns it into indicators for an IOC collection. Neither calls VMRay or Sekoia.
@@ -31,9 +31,7 @@ hashes ──► Get Samples By Hash ──────────────�
 
 | Group | Action | What it does | Branches | Quota |
 |---|---|---|---|---|
-| Submit and follow | Submit Sample And Wait | uploads files and waits for the analysis | `completed` / `timed_out` / `submission_failed` | yes |
-| | Submit URL And Wait | submits a URL and waits for the analysis | `completed` / `timed_out` / `submission_failed` | yes |
-| | Submit Sample | uploads files and returns at once | `submitted` / `submission_failed` | yes |
+| Submit and follow | Submit Sample | uploads files and returns at once | `submitted` / `submission_failed` | yes |
 | | Submit URL | submits a URL and returns at once | `submitted` / `submission_failed` | yes |
 | | Get Submission Result | one look at whether submissions finished | `completed` / `pending` / `failed` | no |
 | Look up | Get Samples By Hash | finds the samples VMRay already knows for hashes | `found` / `not_found` | no |
@@ -61,8 +59,8 @@ for (`N` is the node that produced the field):
 | From | Field | To | Input | Expression |
 |---|---|---|---|---|
 | Submit Sample / Submit URL | `submission_ids` | Get Submission Result | `submission_ids` | `{{ node.N['submission_ids'] }}` |
-| SentinelOne Get malwares from threat, or any action that saves files | `files` | Submit Sample, Submit Sample And Wait | `files` | `{{ node.N['files'] }}` |
-| Get Submission Result, Submit ... And Wait, Get Samples By Hash | `sample_ids` | any Get Sample action, Get Child Samples | `sample_id` | `{{ node.N['sample_ids'][0] }}` |
+| SentinelOne Get malwares from threat, or any action that saves files | `files` | Submit Sample | `files` | `{{ node.N['files'] }}` |
+| Get Submission Result, Get Samples By Hash | `sample_ids` | any Get Sample action, Get Child Samples | `sample_id` | `{{ node.N['sample_ids'][0] }}` |
 | the same | `submission_ids` | any Get Sample action, Get Child Samples | `submission_id` | `{{ node.N['submission_ids'][0] }}` |
 | the same | `submission_ids` or `sample_ids` | Build Report | `submission_ids` or `sample_ids` | `{{ node.N['submission_ids'] }}` |
 | Build Report, Get Child Sample Report | `report_path` | Render Report, Extract IOCs | `report_path` | `{{ node.N['report_path'] }}` |
@@ -73,16 +71,16 @@ for (`N` is the node that produced the field):
 | Get Sample Screenshots, Get Sample Report, Get Analysis Archive | `files` | any action that takes files | `files` | `{{ node.N['files'] }}` |
 
 Use the branches rather than testing fields: `has_children` and `found` are there so a playbook can skip the steps that
-follow (Sekoia rejects a Foreach over an empty list). Two ways to run an analysis:
+follow (Sekoia rejects a Foreach over an empty list).
 
-- **One run waits.** `Submit Sample And Wait` / `Submit URL And Wait` poll inside the action, up to their `timeout`
-  (30 minutes by default). Simple, but the playbook run stays open meanwhile.
-- **Check later.** `Submit Sample` / `Submit URL`, then Sekoia's `Wait`, then `Get Submission Result`, repeated a fixed
-  number of times. The SentinelOne playbook templates do this.
+**No action waits.** An analysis takes minutes, and an action that polls keeps the playbook run open meanwhile. Sekoia
+has no loop that waits, but its Utils module has a `Wait` action (`duration` in seconds, up to 3600), so the playbook
+does the waiting: `Submit Sample` → `Wait` → `Get Submission Result`, repeated a fixed number of times (see
+`GetSubmissionResult` below). The SentinelOne and Scan URL templates do this.
 
-### `SubmitSampleAndWait` - Submit Sample And Wait
+### `SubmitSample` - Submit Sample
 
-Uploads files from the playbook run's storage (`POST /sample/submit` with `sample_file`) and polls every resulting submission until it finishes. Built for SentinelOne's "Get malwares from threat", which fetches a threat's file(s) from the endpoint, decrypts them and writes them to the storage named by SHA-1.
+Uploads files from the playbook run's storage (`POST /sample/submit` with `sample_file`) and **returns at once** with the submission IDs. Built for SentinelOne's "Get malwares from threat", which fetches a threat's file(s) from the endpoint, decrypts them and writes them to the storage named by SHA-1. Consumes quota.
 
 | Argument | Default | Notes |
 |---|---|---|
@@ -91,42 +89,23 @@ Uploads files from the playbook run's storage (`POST /sample/submit` with `sampl
 | `tags` | `["sekoia"]` | tags to attach to the sample |
 | `shareable` | `false` | share the sample's hash with VirusTotal |
 | `max_recursive_samples` | `10` | maximum amount of recursive samples analyzed, at most 10; `0` disables recursion |
-| `query_retry_wait` | `10` | seconds to wait before trying to fetch the results |
-| `timeout` | `1800` | seconds to wait for every submission to finish, then the `timed_out` branch |
 | `analyzer_mode`, `max_jobs`, `enable_reputation`, `enable_whois`, `known_malicious`, `known_benign`, `analysis_timeout`, `net_scheme_name` | empty | VMRay submission options; empty ones are not sent, so the VMRay user's analyzer settings apply |
 
 Each file is submitted on its own and sent under its storage-path name; VMRay detects its type from the content. A path outside the storage (absolute, or with `..`), a missing or empty file, and a file VMRay refuses are listed in `errors` with their `file`, and the other files still go through. No archive settings: the files arrive already extracted.
 
-**Outputs:** `completed` / `timed_out` / `submission_failed` (no file could be submitted, or every submission failed). **Results:** `submission_ids`, `sample_ids`, `submissions`, `pending_submission_ids` (still running at the timeout), `failed_submission_ids`, `timed_out`, `errors`, `submitted_files`.
+**Outputs:** `submitted` (VMRay started at least one submission) / `submission_failed`. **Results:** `submitted` (bool), `submission_ids` (started, not finished: input for `GetSubmissionResult`), `submitted_files`, `errors`.
 
-### `SubmitUrlAndWait` - Submit URL And Wait
+### `SubmitUrl` - Submit URL
 
-Submits a URL and polls every resulting submission until it finishes.
+Submits a URL (`POST /sample/submit` with `sample_url`) and **returns at once** with the submission IDs. Consumes quota.
 
-| Argument | Default | Notes |
-|---|---|---|
-| `sample_url` | required | the URL to detonate |
-| `reanalyze` | `true` | re-analyze known samples on submission |
-| `tags` | `["sekoia"]` | tags to attach to the sample |
-| `shareable` | `false` | share the sample's hash with VirusTotal |
-| `max_recursive_samples` | `10` | maximum amount of recursive samples analyzed, at most 10; `0` disables recursion |
-| `query_retry_wait` | `10` | seconds to wait before trying to fetch the results |
-| `timeout` | `1800` | seconds to wait for every submission to finish, then the `timed_out` branch |
-| `analyzer_mode`, `max_jobs`, `enable_reputation`, `enable_whois`, `known_malicious`, `known_benign`, `analysis_timeout`, `net_scheme_name` | empty | VMRay submission options; empty ones are not sent, so the VMRay user's analyzer settings apply |
+It takes the same inputs as `SubmitSample`, with `sample_url` (required: the URL to detonate) in place of `files`. There are no archive settings (archive password, compound sample): they only apply to submitted files. `analysis_timeout` is how long VMRay analyses.
 
-There are no archive settings (archive password, compound sample): they only apply to submitted files, and this action submits URLs. `timeout` is how long the action waits; the analysis's own timeout is `analysis_timeout`.
-
-**Outputs:** `completed` / `timed_out` / `submission_failed`. **Results:** `submission_ids`, `sample_ids`, `submissions`, `pending_submission_ids` (still running at the timeout), `errors` (VMRay's reasons for a rejected submission).
-
-### `SubmitSample` / `SubmitUrl` - Submit Sample, Submit URL
-
-The same upload as `SubmitSampleAndWait` and `SubmitUrlAndWait`, but they **return at once** instead of waiting for the analysis. They take the same inputs as those two, without `query_retry_wait` and `timeout` (there is nothing to wait for), and send the same form to VMRay. Each file is still submitted on its own, so a file that cannot be read or that VMRay refuses is listed in `errors` while the others go through. Consumes quota, like the waiting actions.
-
-**Outputs:** `submitted` (VMRay started at least one submission) / `submission_failed`. **Results:** `submission_ids` (started, not finished: input for `GetSubmissionResult`), `submitted` (bool), `errors`, and for files `submitted_files`.
+**Outputs:** `submitted` / `submission_failed`. **Results:** `submitted` (bool), `submission_ids`, `errors` (VMRay's reasons for a rejected submission).
 
 ### `GetSubmissionResult` - Get Submission Result
 
-One look at whether submissions have finished: a single `GET /submission/{id}` for each ID, with no waiting and no loop. Takes the `submission_ids` of `SubmitSample` or `SubmitUrl`, or of `SubmitSampleAndWait` / `SubmitUrlAndWait`. Costs no quota.
+One look at whether submissions have finished: a single `GET /submission/{id}` for each ID, with no waiting and no loop. Takes the `submission_ids` of `SubmitSample` or `SubmitUrl`. Costs no quota.
 
 | Argument | Default | Notes |
 |---|---|---|
@@ -141,7 +120,7 @@ One look at whether submissions have finished: a single `GET /submission/{id}` f
 
 A submission that cannot be checked stays pending instead of failing, because the next check may work. When not one of them could be checked (a wrong API key, VMRay down) the action fails, so a playbook never reads "pending" when nothing was looked at.
 
-**Using them in a playbook.** Sekoia has no loop that waits, but its Utils module has a `Wait` action (`duration` in seconds, up to 3600). A chain that does not hold one run open for the whole analysis: `Submit Sample` → `Wait` (say 120 s) → `Get Submission Result` → `completed` goes on to `Build Report`; `pending` goes to another `Wait` → `Get Submission Result`, repeated a fixed number of times, then a comment that the analysis is still running. `SubmitSampleAndWait` / `SubmitUrlAndWait` remain the simpler choice when a playbook run may stay open until the analysis finishes (up to the `timeout`, 30 minutes by default).
+**Using them in a playbook.** Sekoia has no loop that waits, but its Utils module has a `Wait` action (`duration` in seconds, up to 3600). A chain that does not hold one run open for the whole analysis: `Submit Sample` → `Wait` (say 120 s) → `Get Submission Result` → `completed` goes on to `Build Report`; `pending` goes to another `Wait` → `Get Submission Result`, repeated a fixed number of times, then a comment that the analysis is still running.
 
 ### `GetSamplesByHash` - Get Samples By Hash
 
@@ -253,7 +232,7 @@ Builds the full report of one child sample, the same report `BuildReport` writes
 
 ### `BuildReport` - Build Report
 
-The heavy lifting. Takes `sample_ids` or `submission_ids` (from `SubmitSampleAndWait`, each resolved to its sample); `sample_ids` wins when both are given. Per sample it fetches, one call after another: the analyses of the latest submission, VTIs, MITRE ATT&CK techniques, IOCs, classifications and threat names - then the screenshots of each analysis. Child samples, down to `max_recursion_depth`, get only their sample object and their IOCs: the comment shows each child as one row of the child tree, and `ExtractIocs` reads their IOCs; their other sections are used nowhere, so they are not fetched.
+The heavy lifting. Takes `sample_ids` or `submission_ids` (from `GetSubmissionResult`, each resolved to its sample); `sample_ids` wins when both are given. Per sample it fetches, one call after another: the analyses of the latest submission, VTIs, MITRE ATT&CK techniques, IOCs, classifications and threat names - then the screenshots of each analysis. Child samples, down to `max_recursion_depth`, get only their sample object and their IOCs: the comment shows each child as one row of the child tree, and `ExtractIocs` reads their IOCs; their other sections are used nowhere, so they are not fetched.
 
 | Argument | Default | Notes |
 |---|---|---|
@@ -343,7 +322,7 @@ All three work the same way after the file or URL is submitted: `Submit Sample` 
 
 **No nested loops inside a loop.** A Foreach inside another Foreach cannot iterate a list produced inside the outer loop — its input arrives empty.
 
-**Files come from another action, not from the alert.** Sekoia alerts don't carry sample bytes: `SubmitSampleAndWait` submits files that an EDR action wrote to the playbook run's storage. Without one, a hash is looked up and a URL is detonated.
+**Files come from another action, not from the alert.** Sekoia alerts don't carry sample bytes: `SubmitSample` submits files that an EDR action wrote to the playbook run's storage. Without one, a hash is looked up and a URL is detonated.
 
 ## Development
 
@@ -353,6 +332,21 @@ mise run lint     # ruff check, ruff format --check, mypy
 mise run test     # pytest — fast suite only
 mise run format   # ruff fix + format
 ```
+
+### Naming
+
+One name runs through an action, from its display name to its files:
+
+| Piece | Rule | Example (Get Sample VTIs) |
+|---|---|---|
+| Display name | `Verb Noun`, Title Case | Get Sample VTIs |
+| Class and docker name | the display name without spaces | `GetSampleVtis` |
+| Code | `vmray_modules/<snake_case>_action.py` | `get_sample_vtis_action.py` |
+| Manifest | `action_<snake_case>.json` | `action_get_sample_vtis.json` |
+| Models | `<Class>Arguments` and `<Class>Results`, in `<area>_models.py` | `GetSampleVtisArguments` |
+| Client method | `verb_noun` of the VMRay resource, never an action name | `get_sample_threat_indicators` |
+
+Shared code sits in `<area>_helpers.py` and `<area>_models.py` (`submission`, `sample`, `child`, `report`); `module_models.py` holds the module configuration. The same split applies to the VMRay words: a **submission** is one analysis job (`submission_id`, finished or not, with errors or not) and a **sample** is the file or URL it analysed (`sample_id`, with its report, IOCs and child samples). One sample can have several submissions, and a submission points at its sample with `submission_sample_id`. So the submit actions and `Get Submission Result` talk about submissions, every `Get Sample ...` action about samples, and an action that takes either accepts `sample_id` or `submission_id`.
 
 Action manifests (`action_*.json`) and `main.py` are generated from the code:
 

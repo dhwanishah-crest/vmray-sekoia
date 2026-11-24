@@ -2,7 +2,7 @@
 Get Child Sample Report, and Get Sample IOCs / Mitre Attack Techniques / VTIs / Screenshots / Report, and Get
 Analysis Archive.
 
-Field names on VMRay-sourced models follow the VMRay Platform REST API verbatim (see models.py).
+Field names on VMRay-sourced models follow the VMRay Platform REST API verbatim (see module_models.py).
 """
 
 from typing import Any
@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 from pydantic.json_schema import SkipJsonSchema
 
-from vmray_modules.models import hide_empty_defaults
+from vmray_modules.module_models import hide_empty_defaults
 
 # --------------------------------------------------------------------------
 # GetSamplesByHash — lookup only; building the full report is a separate action
@@ -70,7 +70,7 @@ class GetChildSamplesArguments(BaseModel):
     submission_id: int | SkipJsonSchema[None] = Field(
         default=None,
         title="Submission ID",
-        description="VMRay submission ID — e.g. the `submission_ids` of Submit Sample And Wait. It is resolved to its "
+        description="VMRay submission ID — e.g. the `submission_ids` of Get Submission Result. It is resolved to its "
         "sample with one GET /submission/{id}. Used when `sample_id` is empty.",
     )
     max_depth: int = Field(
@@ -226,8 +226,8 @@ class SampleRefArguments(BaseModel):
     submission_id: int | SkipJsonSchema[None] = Field(
         default=None,
         title="Submission ID",
-        description="VMRay submission ID — e.g. the `submission_ids` of Submit Sample. It is resolved to its sample "
-        "with one GET /submission/{id}. Used when `sample_id` is empty.",
+        description="VMRay submission ID — e.g. the `submission_ids` of Get Submission Result. It is resolved to its "
+        "sample with one GET /submission/{id}. Used when `sample_id` is empty.",
     )
 
 

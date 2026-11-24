@@ -1,8 +1,8 @@
 """GetSubmissionResult — one look at whether submissions have finished.
 
-Takes the submission IDs of Submit Sample or Submit URL (or of Submit Sample And Wait and Submit URL
-Sample) and asks VMRay once for each (GET /submission/{id}). It does not wait and does not loop: a playbook decides
-what to do while something is still running.
+Takes the submission IDs of Submit Sample or Submit URL and asks VMRay once for each (GET /submission/{id}). It
+does not wait and does not loop: a playbook decides what to do while something is still running (typically a
+Sekoia `Wait`, then this action again).
 
 Takes one of three branches:
   completed — nothing is running and at least one submission finished without error. `submission_ids` and
@@ -23,7 +23,6 @@ from pydantic import ValidationError
 from vmray_modules.base import VMRayAction
 from vmray_modules.client import VMRayClientError
 from vmray_modules.submission_models import GetSubmissionResultArguments, GetSubmissionResultResults, Submission
-from vmray_modules.submit_helpers import submission_state
 
 
 class GetSubmissionResult(VMRayAction):
@@ -43,13 +42,13 @@ class GetSubmissionResult(VMRayAction):
 
         for submission_id in arguments.submission_ids:
             try:
-                submission = Submission.model_validate(self.client.update_submission(submission_id))
+                submission = Submission.model_validate(self.client.get_submission(submission_id))
             except (VMRayClientError, ValidationError) as exc:
                 unchecked += 1
                 pending.append(submission_id)
                 errors.append({"submission_id": submission_id, "error_msg": f"could not be checked: {exc}"})
                 continue
-            state = submission_state(submission)
+            state = submission.state
             if state == "pending":
                 pending.append(submission_id)
             elif state == "failed":

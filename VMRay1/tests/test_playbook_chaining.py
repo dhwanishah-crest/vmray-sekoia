@@ -25,12 +25,10 @@ from vmray_modules.get_sample_screenshots_action import GetSampleScreenshots
 from vmray_modules.get_sample_vtis_action import GetSampleVtis
 from vmray_modules.get_samples_by_hash_action import GetSamplesByHash
 from vmray_modules.get_submission_result_action import GetSubmissionResult
-from vmray_modules.models import VMRayConfiguration, VMRayModule
+from vmray_modules.module_models import VMRayConfiguration, VMRayModule
 from vmray_modules.render_report_action import RenderReport
 from vmray_modules.submit_sample_action import SubmitSample
-from vmray_modules.submit_sample_and_wait_action import SubmitSampleAndWait
 from vmray_modules.submit_url_action import SubmitUrl
-from vmray_modules.submit_url_and_wait_action import SubmitUrlAndWait
 
 SHA1 = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
 SHA256 = "d" * 64
@@ -111,21 +109,6 @@ def test_submit_a_file_follow_it_and_read_the_sample(requests_mock, playbook):
 
     report, _ = playbook.run(GetSampleReport, {"submission_id": started["submission_ids"][0]})
     assert report["sample_id"] == 42 and report["content_type"] == "application/pdf"
-
-
-def test_the_waiting_actions_give_the_same_ids_the_get_actions_take(requests_mock, playbook):
-    mock_vmray(requests_mock)
-    requests_mock.get(f"{BASE_URL}/rest/sample/42/iocs", json=ok({"iocs": {}}))
-    files = [{"path": playbook.file(SHA1)}]
-
-    waited, _ = playbook.run(SubmitSampleAndWait, {"files": files, "query_retry_wait": 0.01})
-    by_url, _ = playbook.run(SubmitUrlAndWait, {"sample_url": "http://evil.example/x", "query_retry_wait": 0.01})
-
-    for result in (waited, by_url):
-        iocs, _ = playbook.run(GetSampleIocs, {"sample_id": result["sample_ids"][0]})
-        assert iocs["sample_id"] == 42
-        again, _ = playbook.run(GetSampleIocs, {"submission_id": result["submission_ids"][0]})
-        assert again["sample_id"] == 42
 
 
 def test_a_url_is_submitted_followed_and_reported(requests_mock, playbook):

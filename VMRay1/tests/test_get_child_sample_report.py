@@ -5,7 +5,8 @@ import pytest
 
 from tests.test_build_report import BASE_URL, mock_full_sample, ok
 from vmray_modules.get_child_sample_report_action import GetChildSampleReport
-from vmray_modules.models import BuildReportResults, VMRayConfiguration, VMRayModule
+from vmray_modules.module_models import VMRayConfiguration, VMRayModule
+from vmray_modules.report_models import BuildReportResults
 from vmray_modules.sample_models import GetChildSampleReportArguments
 
 MANIFEST = Path(__file__).parents[1] / "action_get_child_sample_report.json"

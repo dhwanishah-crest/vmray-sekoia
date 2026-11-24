@@ -12,7 +12,7 @@
         "type": "integer"
       },
       "submission_id": {
-        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Submit Sample And Wait. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
+        "description": "VMRay submission ID \u2014 e.g. the `submission_ids` of Get Submission Result. It is resolved to its sample with one GET /submission/{id}. Used when `sample_id` is empty.",
         "title": "Submission ID",
         "type": "integer"
       },

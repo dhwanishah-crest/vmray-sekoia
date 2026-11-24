@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-11-24 - 1.3.0
+
+### Removed
+- Submit Sample And Wait and Submit URL And Wait actions: no action waits for an analysis any more. Use Submit Sample or Submit URL, then a Sekoia `Wait` and Get Submission Result, as the playbook templates already do. Playbooks that used the removed actions must be changed, and the integration installed fresh (delete it in Sekoia and import it again)
+
+### Changed
+- One naming scheme for the code: `models.py` is now `module_models.py` (the module configuration) and the Build Report and indicator models moved to `report_models.py`; `submit_helpers.py` is now `submission_helpers.py`; the client methods are `submit_url`, `submit_sample` and `get_submission`; the tests have one file per action. The README has a Naming section. No behaviour change
+
 ## 2026-11-23 - 1.2.0
 
 ### Added

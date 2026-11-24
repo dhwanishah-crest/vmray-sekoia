@@ -222,27 +222,31 @@ class VMRayClient:
 
     # -- submission -------------------------------------------------------
 
-    def submit_url_sample(
+    @staticmethod
+    def _submit_form(tags: list[str] | None, reanalyze: bool, extra_params: dict[str, Any]) -> dict[str, Any]:
+        """The POST /sample/submit form fields every submission shares. `analysis_caching` is not sent: it takes
+        'disabled'/'enabled'/'smart'/'legacy', and left out the VMRay user's own setting applies."""
+        tags = [t.strip() for t in tags or [] if t and t.strip()]
+        return _drop_none(
+            {
+                "reanalyze": True if reanalyze else None,  # left out when false
+                "tags": ",".join(tags) if tags else None,
+                **extra_params,
+            }
+        )
+
+    def submit_url(
         self,
         sample_url: str,
         tags: list[str] | None = None,
         reanalyze: bool = False,
         **extra_params: Any,
     ) -> dict[str, Any]:
-        # analysis_caching is not sent: it takes 'disabled'/'enabled'/'smart'/'legacy', and left out the VMRay
-        # user's own setting applies
-        tags = [t.strip() for t in tags or [] if t and t.strip()]
-        params = _drop_none(
-            {
-                "sample_url": sample_url,
-                "reanalyze": True if reanalyze else None,  # left out when false
-                "tags": ",".join(tags) if tags else None,
-                **extra_params,
-            }
-        )
-        return self._check_response(self.session.post(self._url(self._submit), data=params))
+        """POST /sample/submit with the form field `sample_url`."""
+        form = {"sample_url": sample_url, **self._submit_form(tags, reanalyze, extra_params)}
+        return self._check_response(self.session.post(self._url(self._submit), data=form))
 
-    def submit_file_sample(
+    def submit_sample(
         self,
         file_name: str,
         content: bytes,
@@ -250,25 +254,17 @@ class VMRayClient:
         reanalyze: bool = False,
         **extra_params: Any,
     ) -> dict[str, Any]:
-        """Uploads one file as multipart `sample_file`; the other fields are the same form fields as a URL
-        submission. VMRay detects the file type from its content, so `file_name` only labels the sample."""
-        tags = [t.strip() for t in tags or [] if t and t.strip()]
-        params = _drop_none(
-            {
-                "reanalyze": True if reanalyze else None,  # left out when false
-                "tags": ",".join(tags) if tags else None,
-                **extra_params,
-            }
-        )
+        """POST /sample/submit with one file as multipart `sample_file`; the other fields are the same form fields as
+        a URL submission. VMRay detects the file type from its content, so `file_name` only labels the sample."""
         return self._check_response(
             self.session.post(
                 self._url(self._submit),
-                data=params,
+                data=self._submit_form(tags, reanalyze, extra_params),
                 files={"sample_file": (file_name, content, "application/octet-stream")},
             )
         )
 
-    def update_submission(self, submission_id: int) -> dict[str, Any]:
+    def get_submission(self, submission_id: int) -> dict[str, Any]:
         return self._check_response(self.session.get(self._url(self._submission.format(submission_id=submission_id))))
 
     # -- sample -------------------------------------------------------------

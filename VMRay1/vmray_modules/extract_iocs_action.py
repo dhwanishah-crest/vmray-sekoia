@@ -15,8 +15,7 @@ from email.utils import parseaddr
 from typing import Any
 
 from vmray_modules.base import VMRayAction
-from vmray_modules.models import Indicator, IOCSet
-from vmray_modules.report_models import ExtractIocsArguments, ExtractIocsResults, IndicatorGroup
+from vmray_modules.report_models import ExtractIocsArguments, ExtractIocsResults, Indicator, IndicatorGroup, IOCSet
 
 # category -> (Sekoia indicator_type, candidate value keys, tried in order)
 _CATEGORY_MAP: dict[str, tuple[str, tuple[str, ...]]] = {

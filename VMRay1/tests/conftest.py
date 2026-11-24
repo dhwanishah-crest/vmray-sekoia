@@ -1,3 +1,4 @@
+from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
 
@@ -27,3 +28,14 @@ def data_storage():
     rmtree(constants.DATA_STORAGE)
     constants.DATA_STORAGE = original_storage
     get_data_path.cache_clear()
+
+
+@pytest.fixture
+def storage_file(data_storage):
+    """Writes a file into the playbook run's data storage, as an EDR action would, and returns its name."""
+
+    def write(name, content=b"MZ\x90\x00malware"):
+        (Path(data_storage) / name).write_bytes(content)
+        return name
+
+    return write

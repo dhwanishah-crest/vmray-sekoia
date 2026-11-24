@@ -1,6 +1,6 @@
 """BuildReport — the full VMRay report for a set of samples.
 
-Takes sample IDs or submission IDs (e.g. from SubmitSampleAndWait, each resolved to its
+Takes sample IDs or submission IDs (e.g. from Get Submission Result, each resolved to its
 sample), fetches every sample — lookup and submit responses are incomplete — and attaches, per sample, its
 sub-resources: analyses of the latest submission, VTIs, MITRE ATT&CK, IOCs, classifications, threat names and
 screenshots, then recurses into child samples down to `max_recursion_depth`. Child samples only get their IOCs —
@@ -34,7 +34,7 @@ from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.base import VMRayAction
 from vmray_modules.client import BadResponseError, VMRayClient, VMRayClientError
-from vmray_modules.models import BuildReportArguments, BuildReportResults, Report, ReportSample
+from vmray_modules.report_models import BuildReportArguments, BuildReportResults, Report, ReportSample
 
 # 800px wide so more fit in a comment; quality 85 keeps text in the screenshot from
 # blurring into JPEG artifacts.
@@ -273,7 +273,7 @@ class BuildReport(VMRayAction):
         sample_ids: list[int | None] = []
         for submission_id in dict.fromkeys(submission_ids):
             try:
-                submission = self.client.update_submission(submission_id)
+                submission = self.client.get_submission(submission_id)
             except _RECOVERABLE as exc:
                 errors[f"submission:{submission_id}"] = _describe(exc)
                 continue

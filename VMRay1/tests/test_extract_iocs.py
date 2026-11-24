@@ -2,7 +2,7 @@ import pytest
 from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.extract_iocs_action import ExtractIocs, extract_iocs, iocs_to_indicators
-from vmray_modules.models import IOCSet
+from vmray_modules.report_models import IOCSet
 
 CLEAN_CHILD = {
     "sample_id": 44,

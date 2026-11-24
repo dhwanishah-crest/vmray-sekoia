@@ -9,7 +9,7 @@ from PIL import Image
 from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.build_report_action import BuildReport, ioc_severity
-from vmray_modules.models import VMRayConfiguration, VMRayModule
+from vmray_modules.module_models import VMRayConfiguration, VMRayModule
 
 BASE_URL = "https://eu.cloud.vmray.com"
 
@@ -583,7 +583,7 @@ def test_a_child_pointing_back_up_the_tree_is_not_built_again(requests_mock):
 def test_recursion_depth_is_bounded():
     from pydantic import ValidationError
 
-    from vmray_modules.models import BuildReportArguments
+    from vmray_modules.report_models import BuildReportArguments
 
     with pytest.raises(ValidationError):
         BuildReportArguments(sample_ids=[1], max_recursion_depth=11)

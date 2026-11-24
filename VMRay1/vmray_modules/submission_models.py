@@ -1,19 +1,18 @@
-"""Models of the submitting actions: Submit Sample / Submit URL (and the "And Wait" variants), Get Submission
-Result.
+"""Models of the submit actions (Submit Sample, Submit URL) and of Get Submission Result.
 
-Field names on VMRay-sourced models follow the VMRay Platform REST API verbatim (see models.py).
+Field names on VMRay-sourced models follow the VMRay Platform REST API verbatim (see module_models.py).
 
 The inputs of a submitting action are declared in the order a playbook author fills them in: the sample first (the
-files or the URL), then Re-analyze and Tags, then the VMRay options, and for the "And Wait" actions the two wait
-settings last.
+files or the URL), then Re-analyze and Tags, then the VMRay options. The bases of the argument models list the
+options first and the sample input last, because pydantic orders inherited fields from the last base to the first.
 """
 
-from typing import Annotated, Any
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic.json_schema import SkipJsonSchema
 
-from vmray_modules.models import hide_empty_defaults
+from vmray_modules.module_models import hide_empty_defaults
 
 # --------------------------------------------------------------------------
 # Inputs shared by every submitting action
@@ -152,31 +151,6 @@ class FilesInput(BaseModel):
         return value
 
 
-# The two settings only the "And Wait" actions have. The bases of the argument models below list the options first
-# and the sample input last, because pydantic orders inherited fields from the last base to the first.
-QueryRetryWait = Annotated[
-    float,
-    Field(
-        default=10,
-        gt=0,
-        allow_inf_nan=False,
-        title="Poll interval (s)",
-        description="The amount of seconds to wait between two checks of whether the analysis has finished.",
-    ),
-]
-SubmitTimeout = Annotated[
-    float,
-    Field(
-        default=1800,
-        ge=0,
-        allow_inf_nan=False,
-        title="Wait timeout (s)",
-        description="Maximum time (seconds) to wait for every submission to finish, then the action stops and "
-        "takes the timed_out branch.",
-    ),
-]
-
-
 # --------------------------------------------------------------------------
 # One submission, as VMRay returns it
 # --------------------------------------------------------------------------
@@ -197,9 +171,17 @@ class Submission(BaseModel):
     submission_consumed_quota: int | None = None
     submission_webif_url: str | None = Field(default=None, title="Submission Webif URL")
 
+    @property
+    def state(self) -> str:
+        """Where the submission stands: "pending" until VMRay reports `submission_finished`, then "failed" if it
+        finished with an error, else "finished"."""
+        if not self.submission_finished:
+            return "pending"
+        return "failed" if self.submission_has_errors else "finished"
+
 
 # --------------------------------------------------------------------------
-# Submit URL / Submit Sample — return at once with the submission IDs
+# Submit URL / Submit Sample — return at once with the submission IDs (Get Submission Result follows them)
 # --------------------------------------------------------------------------
 
 
@@ -211,7 +193,7 @@ class SubmitSampleArguments(SubmissionOptions, ReanalyzeAndTags, FilesInput):
     pass
 
 
-class SubmittedResults(BaseModel):
+class SubmitResults(BaseModel):
     submitted: bool = Field(description="True when VMRay accepted at least one submission.")
     submission_ids: list[int] = Field(
         default_factory=list,
@@ -224,69 +206,11 @@ class SubmittedResults(BaseModel):
     )
 
 
-class SubmitUrlResults(SubmittedResults):
+class SubmitUrlResults(SubmitResults):
     pass
 
 
-class SubmitSampleResults(SubmittedResults):
-    submitted_files: list[str] = Field(
-        default_factory=list,
-        title="Submitted Files",
-        description="Files VMRay accepted. A file that could not be read or was refused is in `errors`.",
-    )
-
-
-# --------------------------------------------------------------------------
-# Submit URL And Wait / Submit Sample And Wait — poll until the analysis has finished
-# --------------------------------------------------------------------------
-
-
-class SubmitUrlAndWaitArguments(SubmitUrlArguments):
-    query_retry_wait: QueryRetryWait
-    timeout: SubmitTimeout
-
-
-class SubmitSampleAndWaitArguments(SubmitSampleArguments):
-    query_retry_wait: QueryRetryWait
-    timeout: SubmitTimeout
-
-
-class SubmissionResults(BaseModel):
-    submissions: list[Submission] = Field(default_factory=list, description="Finished submissions.")
-    submission_ids: list[int] = Field(
-        default_factory=list,
-        title="Submission IDs",
-        description="IDs of the finished submissions — input for Build Report.",
-    )
-    sample_ids: list[int] = Field(
-        default_factory=list,
-        title="Sample IDs",
-        description="Distinct sample_ids of the finished submissions — input for Build Report and the Get Sample "
-        "actions.",
-    )
-    pending_submission_ids: list[int] = Field(
-        default_factory=list,
-        title="Pending Submission IDs",
-        description="Submissions still running when the wait timed out.",
-    )
-    timed_out: bool = Field(
-        default=False, description="True when the wait timed out before every submission finished."
-    )
-    failed_submission_ids: list[int] = Field(
-        default_factory=list,
-        title="Failed Submission IDs",
-        description="Submissions that finished with an error, or could not be followed.",
-    )
-    errors: list[dict[str, Any]] = Field(
-        default_factory=list, description="Errors VMRay returned on submit, and why a submission failed."
-    )
-
-
-class SubmitUrlAndWaitResults(SubmissionResults):
-    pass
-
-
-class SubmitSampleAndWaitResults(SubmissionResults):
+class SubmitSampleResults(SubmitResults):
     submitted_files: list[str] = Field(
         default_factory=list,
         title="Submitted Files",
@@ -310,17 +234,18 @@ class GetSubmissionResultArguments(BaseModel):
     @field_validator("submission_ids", mode="before")
     @classmethod
     def _one_or_many(cls, value: Any) -> Any:
-        """A single ID is accepted as a one-item list; duplicates are checked once."""
+        """A single ID is accepted as a one-item list."""
         if isinstance(value, int) and not isinstance(value, bool):
-            value = [value]
-        return list(dict.fromkeys(value)) if isinstance(value, list) else value
+            return [value]
+        return value
 
     @field_validator("submission_ids", mode="after")
     @classmethod
-    def _at_least_one(cls, value: list[int]) -> list[int]:
+    def _distinct_and_not_empty(cls, value: list[int]) -> list[int]:
+        """Duplicates are checked once. This runs after the IDs became integers, so "111" and 111 are one ID."""
         if not value:
             raise ValueError("at least one submission ID is required")
-        return value
+        return list(dict.fromkeys(value))
 
 
 class GetSubmissionResultResults(BaseModel):

@@ -9,7 +9,7 @@ import pytest
 from sekoia_automation.action import Action
 from sekoia_automation.exceptions import MissingActionArgumentError
 
-from vmray_modules import models, sample_models
+from vmray_modules import module_models, sample_models
 from vmray_modules.get_analysis_archive_action import GetAnalysisArchive
 from vmray_modules.get_sample_iocs_action import GetSampleIocs
 from vmray_modules.get_sample_mitre_attack_techniques_action import GetSampleMitreAttackTechniques, technique_ids
@@ -29,8 +29,8 @@ def storage(data_storage):
 
 
 def make(action_class):
-    m = models.VMRayModule()
-    m.configuration = models.VMRayConfiguration(base_url=BASE_URL, api_key="test-key")
+    m = module_models.VMRayModule()
+    m.configuration = module_models.VMRayConfiguration(base_url=BASE_URL, api_key="test-key")
     return action_class(module=m)
 
 

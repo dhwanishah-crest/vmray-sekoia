@@ -1,15 +1,14 @@
-"""SubmitUrl — submit a URL to VMRay and return at once.
+"""SubmitUrl — submit a URL to VMRay (POST /sample/submit) and return at once.
 
-The submission is the one Submit URL And Wait makes, but the action does not wait for the analysis: it returns the IDs
-of the submissions VMRay started. Give them to Get Submission Result to find out whether they finished. Consumes
-quota, like Submit URL And Wait.
+The action does not wait for the analysis: it returns the IDs of the submissions VMRay started. A playbook follows
+them with a Sekoia `Wait` and Get Submission Result. Consumes quota.
 
 Takes the `submitted` branch when VMRay started at least one submission and `submission_failed` otherwise.
 """
 
 from vmray_modules.base import VMRayAction
+from vmray_modules.submission_helpers import submit_url
 from vmray_modules.submission_models import SubmitUrlArguments, SubmitUrlResults
-from vmray_modules.submit_helpers import submit_url
 
 
 class SubmitUrl(VMRayAction):
@@ -21,7 +20,9 @@ class SubmitUrl(VMRayAction):
     results_model = SubmitUrlResults
 
     def run(self, arguments: SubmitUrlArguments) -> SubmitUrlResults:
-        submission_ids, errors = submit_url(self, arguments)
+        outcome = submit_url(self, arguments)
 
-        self.set_output("submitted" if submission_ids else "submission_failed", True)
-        return SubmitUrlResults(submitted=bool(submission_ids), submission_ids=submission_ids, errors=errors)
+        self.set_output(outcome.branch, True)
+        return SubmitUrlResults(
+            submitted=bool(outcome.submission_ids), submission_ids=outcome.submission_ids, errors=outcome.errors
+        )

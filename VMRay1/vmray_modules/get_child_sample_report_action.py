@@ -14,7 +14,7 @@ its path is returned, exactly like Build Report, so Render Report and Extract IO
 from vmray_modules.base import VMRayAction
 from vmray_modules.build_report_action import _ANALYSIS_VERDICTS, _IOC_SEVERITIES, check_filter, write_report
 from vmray_modules.child_helpers import walk_children
-from vmray_modules.models import BuildReportArguments, BuildReportResults
+from vmray_modules.report_models import BuildReportArguments, BuildReportResults
 from vmray_modules.sample_helpers import get_sample_object
 from vmray_modules.sample_models import GetChildSampleReportArguments
 

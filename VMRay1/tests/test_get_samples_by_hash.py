@@ -1,5 +1,5 @@
 from vmray_modules.get_samples_by_hash_action import GetSamplesByHash
-from vmray_modules.models import VMRayConfiguration, VMRayModule
+from vmray_modules.module_models import VMRayConfiguration, VMRayModule
 
 BASE_URL = "https://eu.cloud.vmray.com"
 SHA256 = "a" * 64

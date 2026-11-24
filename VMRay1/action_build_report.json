@@ -15,7 +15,7 @@
         "type": "array"
       },
       "submission_ids": {
-        "description": "VMRay submission IDs \u2014 e.g. the `submission_ids` of Submit URL And Wait. Each is resolved to its sample with one GET /submission/{id}. Used when `sample_ids` is empty.",
+        "description": "VMRay submission IDs \u2014 e.g. the `submission_ids` of Get Submission Result. Each is resolved to its sample with one GET /submission/{id}. Used when `sample_ids` is empty.",
         "items": {
           "type": "integer"
         },

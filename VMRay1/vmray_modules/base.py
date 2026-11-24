@@ -8,8 +8,8 @@ from sekoia_automation.action import Action
 from sekoia_automation.exceptions import MissingActionArgumentError
 
 from vmray_modules.client import VMRayClient
-from vmray_modules.models import Report, VMRayModule
-from vmray_modules.report_models import ReportInput
+from vmray_modules.module_models import VMRayModule
+from vmray_modules.report_models import Report, ReportInput
 
 
 class UnsafeDataPathError(ValueError):
