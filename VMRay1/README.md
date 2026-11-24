@@ -306,6 +306,7 @@ Extracts a report's IOCs as indicators for Sekoia's "Add IOC to IOC Collection" 
 
 | Template | Trigger | Use |
 |---|---|---|
+| `vmray1_report_on_demand.json` | Manual - an analyst runs it on an alert | Hashes and URL in one playbook: reads the file/process hashes and the http(s) `url.original` of the alert's first event. Hashes are looked up with Get Samples By Hash (no quota; unknown ones are listed in a comment), the URL goes through Submit URL and Get Submission Result; each branch then posts its report with screenshots and pushes its IOCs |
 | `vmray1_scan_url.json` | Manual - an analyst runs it on an alert | Scans a URL (the EICAR test file by default; set your own on "VMRay: Submit URL"). Needs no EDR |
 | `vmray1_sentinelone_demo.json` | Alert Created | Fetches a SentinelOne threat's file from the endpoint and scans it |
 | `vmray1_sentinelone_manual_tmp.json` | Manual - an analyst runs it on an alert | Same steps as the Alert Created one, for testing: run it on an alert whose first event carries a SentinelOne threat ID |

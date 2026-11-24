@@ -43,5 +43,16 @@
     ],
     "workspace": "Operation Center",
     "description": "Download a nested zip with the Test integration, submit it to VMRay and run every VMRay1 action on the result"
+  },
+  {
+    "file": "vmray1_report_on_demand.json",
+    "name": "VMRay1: Report on demand (Hash + URL)",
+    "tags": [
+      "Alerts",
+      "Enrichment",
+      "VMRay1"
+    ],
+    "workspace": "Operation Center",
+    "description": "On an alert, look up its file hashes in VMRay (no quota) and submit its URL, then post the reports with screenshots and push the IOCs"
   }
 ]
