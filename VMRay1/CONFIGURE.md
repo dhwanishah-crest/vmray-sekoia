@@ -33,7 +33,7 @@ Look up file hashes in VMRay, detonate URLs or scan files from a Sekoia.io playb
 
     - `Get Samples By Hash` (file hashes of the alert) or `Submit URL` (a URL of the alert), or
     - an EDR action such as SentinelOne's `Get malwares from threat`, which puts the file in the run's storage,
-    - `Submit Sample` with their `files`, or `Submit URL`: both return at once with `submission_ids`, then `Get Submission Result` with those `submission_ids`: it waits for the analysis (up to 30 minutes by default), so no `Wait` or repeated check is needed,
+    - `Submit Sample` with their `files`, or `Submit URL`: both return at once with `submission_ids`, then `Get Submission Result` with those `submission_ids`: it waits for the analysis (up to 60 minutes by default), so no `Wait` or repeated check is needed,
     - optionally `Get Sample IOCs`, `Get Sample VTIs`, `Get Sample Mitre Attack Techniques`, `Get Sample Screenshots`, `Get Sample Report` or `Get Analysis Archive` to read one part of the analysis without building the whole report,
     - optionally `Get Child Samples` on the file's `sample_ids` to see what VMRay found inside it (a `has_children` branch skips the rest when there is nothing), and `Get Child Sample Report` for one chosen child,
     - then `Build Report` with the `sample_ids` or `submission_ids` they return,

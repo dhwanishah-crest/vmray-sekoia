@@ -76,7 +76,7 @@ follow (Sekoia rejects a Foreach over an empty list).
 **Get Submission Result does the waiting.** An analysis takes minutes, and a Sekoia playbook has no loop (it has
 Foreach over a list, but nothing that repeats a step until something is true, and no way back to an earlier node). So
 the wait lives in one action: `Submit Sample` / `Submit URL` → `Get Submission Result` (polls VMRay every
-`poll_interval` seconds, up to `timeout`) → `Build Report`. Nothing else is needed between them.
+growing intervals, up to `timeout`) → `Build Report`. Nothing else is needed between them.
 
 ### `SubmitSample` - Submit Sample
 
@@ -105,13 +105,12 @@ It takes the same inputs as `SubmitSample`, with `sample_url` (required: the URL
 
 ### `GetSubmissionResult` - Get Submission Result
 
-Waits until submissions have finished, then returns them. It makes a `GET /submission/{id}` for each submission still running, every `poll_interval` seconds, until none is pending or `timeout` runs out. A submission that has finished is not asked about again. Takes the `submission_ids` of `SubmitSample` or `SubmitUrl`. Costs no quota.
+Waits until submissions have finished, then returns them. It makes a `GET /submission/{id}` for each submission still running, until none is pending or `timeout` runs out. It asks at once, then after waiting 10, 20 and 30 seconds, then every 60 seconds, so a quick analysis is noticed quickly and a slow one is not asked about all the time. A submission that has finished is not asked about again. Takes the `submission_ids` of `SubmitSample` or `SubmitUrl`. Costs no quota.
 
 | Argument | Default | Notes |
 |---|---|---|
 | `submission_ids` | required | one ID or a list; duplicates are checked once |
-| `timeout` | `1800` | seconds to wait for every submission to finish; then the `failed` branch with `timed_out` true |
-| `poll_interval` | `10` | seconds between two checks |
+| `timeout` | `3600` | seconds to wait for every submission to finish; then the `failed` branch with `timed_out` true |
 
 **Outputs:**
 - `completed`: every submission has finished and at least one finished without error. `submission_ids` and `sample_ids` are ready for `BuildReport`.
@@ -121,7 +120,7 @@ Waits until submissions have finished, then returns them. It makes a `GET /submi
 
 A submission that cannot be checked is not called failed on the first try, because the next check may work; if it is still unreachable when the wait ends, `errors` says why. When not one submission could be checked in three rounds in a row (a wrong API key, VMRay down) the action raises an error, so a playbook never reads "timed out" when nothing was looked at.
 
-**In a playbook** it is one block between the submit and the report: `Submit URL` (`submitted`) → `Get Submission Result` → `completed` goes on to `Build Report`; `failed` goes to a comment that the analysis did not finish. The run stays open while the action waits, up to `timeout` (30 minutes by default).
+**In a playbook** it is one block between the submit and the report: `Submit URL` (`submitted`) → `Get Submission Result` → `completed` goes on to `Build Report`; `failed` goes to a comment that the analysis did not finish. The run stays open while the action waits, up to `timeout` (60 minutes by default).
 
 ### `GetSamplesByHash` - Get Samples By Hash
 
@@ -311,7 +310,7 @@ Extracts a report's IOCs as indicators for Sekoia's "Add IOC to IOC Collection" 
 | `vmray1_sentinelone_demo.json` | Alert Created | Fetches a SentinelOne threat's file from the endpoint and scans it |
 | `vmray1_sentinelone_manual_tmp.json` | Manual - an analyst runs it on an alert | Same steps as the Alert Created one, for testing: run it on an alert whose first event carries a SentinelOne threat ID |
 
-All three work the same way after the file or URL is submitted: `Submit Sample` / `Submit URL` start the analysis and return at once, and one `Get Submission Result` waits for it (up to 30 minutes). `completed` goes on to `Build Report` → `Render Report` → Comment Alert, then the screenshot comments and the IOC push. A `Get Child Samples` branch (suspicious or worse, up to 10 levels) also posts a comment listing the dangerous files VMRay found inside the submitted file. When VMRay refuses the submission, finishes with an error, or is still analysing when the wait ends, a comment says so with the submission IDs. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
+All three work the same way after the file or URL is submitted: `Submit Sample` / `Submit URL` start the analysis and return at once, and one `Get Submission Result` waits for it (up to 60 minutes). `completed` goes on to `Build Report` → `Render Report` → Comment Alert, then the screenshot comments and the IOC push. A `Get Child Samples` branch (suspicious or worse, up to 10 levels) also posts a comment listing the dangerous files VMRay found inside the submitted file. When VMRay refuses the submission, finishes with an error, or is still analysing when the wait ends, a comment says so with the submission IDs. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
 
 **After creating a playbook from a template:** select your VMRay1 account on the VMRay1 nodes, and set `ioc_collection_id` on "Add IOCs to IOC Collection". For the SentinelOne ones, also select your SentinelOne account (its API user needs the permission to fetch threat files, and the endpoint's agent must be online) and consider limiting the trigger to SentinelOne rules: every file or URL submitted consumes quota.
 

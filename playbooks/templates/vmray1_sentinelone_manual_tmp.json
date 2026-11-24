@@ -214,7 +214,7 @@
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
         "author": "VMRay",
-        "content": "**VMRay: sandbox analysis incomplete** — the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}` did not return a report: VMRay either finished the analysis with an error or was still analysing it when the 30 minute wait ended.\n\nSubmission(s): {{ node.6['submission_ids'] | join(', ') }}. Open the submission in VMRay to follow it."
+        "content": "**VMRay: sandbox analysis incomplete** — the file(s) SentinelOne fetched for threat `{{ node.2['events'][0]['sentinelone.threatId'] | string | replace('`', \"'\") }}` did not return a report: VMRay either finished the analysis with an error or was still analysing it when the 60 minute wait ended.\n\nSubmission(s): {{ node.6['submission_ids'] | join(', ') }}. Open the submission in VMRay to follow it."
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
       "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
@@ -417,13 +417,12 @@
       },
       "arguments": {
         "submission_ids": "{{ node.6['submission_ids'] }}",
-        "timeout": 1800,
-        "poll_interval": 10
+        "timeout": 3600
       },
       "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
       "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
       "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899",
-      "description": "Waits (up to 30 minutes) until VMRay has finished the analysis: completed goes on to the report; failed means VMRay finished it with an error, or it was still running when the wait ended"
+      "description": "Waits (up to 60 minutes) until VMRay has finished the analysis: completed goes on to the report; failed means VMRay finished it with an error, or it was still running when the wait ended"
     },
     "25": {
       "name": "Comment Alert (File Not Submitted)",

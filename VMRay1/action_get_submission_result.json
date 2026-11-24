@@ -15,17 +15,10 @@
         "type": "array"
       },
       "timeout": {
-        "default": 1800,
-        "description": "Maximum time (seconds) to wait for every submission to finish. When it runs out the action takes the `failed` branch and `timed_out` is true.",
+        "default": 3600,
+        "description": "Maximum time (seconds) to wait for every submission to finish, 60 minutes by default. VMRay is asked at once, then after 10, 30, 60 and 120 seconds, then every 60 seconds. When the time runs out the action takes the `failed` branch and `timed_out` is true.",
         "exclusiveMinimum": 0,
         "title": "Wait timeout (s)",
-        "type": "number"
-      },
-      "poll_interval": {
-        "default": 10,
-        "description": "The amount of seconds to wait between two checks of whether the submissions have finished.",
-        "exclusiveMinimum": 0,
-        "title": "Poll interval (s)",
         "type": "number"
       }
     },

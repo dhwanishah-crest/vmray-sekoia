@@ -5,13 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-11-24 - 1.5.0
+
+### Changed
+- Get Submission Result waits up to 60 minutes by default (`timeout` 3600 s, was 30 minutes) and asks VMRay at growing intervals: at once, then after 10, 20 and 30 seconds, then every 60 seconds. A quick analysis is noticed in seconds and a slow one is not asked about all the time. The `poll_interval` input is removed
+- Get Submission Result has two branches: `completed`, and `failed` when a submission failed or the wait timed out (`timed_out` is then true). The `pending` branch and the single look (`timeout` 0) are gone: with a waiting action they only confused the playbook. `timeout` must be above 0
+- The playbook templates drop the `pending` link and wait up to 60 minutes
+- The Docker image is built on `python:3.14-slim-bookworm` instead of the full Debian image, and installs only the runtime dependencies (the lint tools were being installed too), so it is smaller and starts faster
+
 ## 2026-11-24 - 1.4.0
 
 ### Changed
-- Get Submission Result now waits: it polls VMRay every `poll_interval` seconds (10 by default) until every submission has finished or `timeout` runs out (1800 s by default), then returns. The `pending` branch is gone: the action takes `completed`, or `failed` when a submission failed or the wait timed out, and the results gain `timed_out`. `timeout` must be above 0 (no single look any more). A playbook has no loop, so the Wait + Get Submission Result chain of three checks is replaced by one Get Submission Result block after the submit
+- Get Submission Result now waits: it polls VMRay every `poll_interval` seconds (10 by default) until every submission has finished or `timeout` runs out (1800 s by default), then returns. `pending` now means the wait timed out, and the results gain `timed_out`. `timeout` 0 keeps the old single look. A playbook has no loop, so the Wait + Get Submission Result chain of three checks is replaced by one Get Submission Result block after the submit
 - The playbook templates use that one block: Submit, Get Submission Result, Build Report. They are laid out top to bottom, with every arrow running downward
 - Get Submission Result fails after three rounds in a row in which no submission could be checked, instead of staying pending until the timeout
-- The Docker image is smaller and starts faster: it is built on `python:3.14-slim-bookworm` instead of the full Debian image, and installs only the runtime dependencies (the lint tools were being installed too)
 - Fixed the child-samples comment of the Scan URL playbook ("found found while analysing")
 
 ## 2026-11-24 - 1.3.0

@@ -230,19 +230,13 @@ class GetSubmissionResultArguments(BaseModel):
         description="VMRay submission IDs to wait for — e.g. the `submission_ids` of Submit Sample or Submit URL.",
     )
     timeout: float = Field(
-        default=1800,
+        default=3600,
         gt=0,
         allow_inf_nan=False,
         title="Wait timeout (s)",
-        description="Maximum time (seconds) to wait for every submission to finish. When it runs out the action "
-        "takes the `failed` branch and `timed_out` is true.",
-    )
-    poll_interval: float = Field(
-        default=10,
-        gt=0,
-        allow_inf_nan=False,
-        title="Poll interval (s)",
-        description="The amount of seconds to wait between two checks of whether the submissions have finished.",
+        description="Maximum time (seconds) to wait for every submission to finish, 60 minutes by default. VMRay is "
+        "asked at once, then after 10, 30, 60 and 120 seconds, then every 60 seconds. When the time runs out the "
+        "action takes the `failed` branch and `timed_out` is true.",
     )
 
     @field_validator("submission_ids", mode="before")

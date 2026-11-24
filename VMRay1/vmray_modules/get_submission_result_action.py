@@ -1,9 +1,10 @@
 """GetSubmissionResult — wait until submissions have finished, then return them.
 
-Takes the submission IDs of Submit Sample or Submit URL and asks VMRay about each (GET /submission/{id}) every
-`poll_interval` seconds until none is pending or `timeout` runs out. A playbook has no loop, so this one block covers
-the whole wait: Submit, then Get Submission Result, then Build Report. A submission that has finished is not asked
-about again.
+Takes the submission IDs of Submit Sample or Submit URL and asks VMRay about each (GET /submission/{id}) until none
+is pending or `timeout` runs out (60 minutes by default). It asks at once, then after waiting 10, 20 and 30 seconds,
+then every 60 seconds: that is at 0, 10, 30, 60 and 120 seconds, then once a minute. A quick analysis is noticed
+quickly and a slow one is not asked about all the time. A playbook has no loop, so this one block covers the whole
+wait: Submit, then Get Submission Result, then Build Report. A submission that has finished is not asked about again.
 
 Takes one of two branches:
   completed — every submission has finished and at least one finished without error. `submission_ids` and
@@ -26,6 +27,14 @@ from vmray_modules.submission_helpers import poll_submissions
 from vmray_modules.submission_models import GetSubmissionResultArguments, GetSubmissionResultResults, Submission
 
 _BLIND_ROUNDS = 3  # rounds in a row in which not one submission could be checked, before the action fails
+_POLL_DELAYS = (10, 20, 30)  # seconds to wait before the 2nd, 3rd and 4th check
+_POLL_DELAY_MAX = 60  # seconds between every later check
+
+
+def poll_delay(round_number: int) -> float:
+    """Seconds to wait after check number `round_number` (0 for the first): 10, 20, 30, then 60 every time.
+    A quick analysis is noticed quickly, and a slow one is not asked about all the time."""
+    return _POLL_DELAYS[round_number] if round_number < len(_POLL_DELAYS) else _POLL_DELAY_MAX
 
 
 class GetSubmissionResult(VMRayAction):
@@ -43,6 +52,7 @@ class GetSubmissionResult(VMRayAction):
         pending = list(arguments.submission_ids)
         unchecked: dict[int, str] = {}
         blind_rounds = 0
+        round_number = 0
 
         while True:
             polled = poll_submissions(self.client, pending)
@@ -61,7 +71,8 @@ class GetSubmissionResult(VMRayAction):
             remaining = deadline - time.monotonic()
             if not pending or remaining <= 0:
                 break
-            time.sleep(max(0.0, min(arguments.poll_interval, remaining)))
+            time.sleep(max(0.0, min(poll_delay(round_number), remaining)))
+            round_number += 1
 
         errors: list[dict[str, Any]] = [
             {"submission_id": submission_id, "error_msg": "VMRay finished it with an error"}
