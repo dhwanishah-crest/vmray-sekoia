@@ -1,7 +1,7 @@
 """SubmitUrl — submit a URL to VMRay (POST /sample/submit) and return at once.
 
 The action does not wait for the analysis: it returns the IDs of the submissions VMRay started. A playbook follows
-them with a Sekoia `Wait` and Get Submission Result. Consumes quota.
+them to Get Submission Result, which waits for the analysis. Consumes quota.
 
 Takes the `submitted` branch when VMRay started at least one submission and `submission_failed` otherwise.
 """

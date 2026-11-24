@@ -7,7 +7,7 @@
     "VMRay1"
   ],
   "workspace": "Operation Center",
-  "description": "Run by an analyst on an alert to scan a URL. Submits the URL set on 'VMRay: Submit URL' (the harmless EICAR test file by default) to VMRay without blocking, checks the analysis after 2, 6 and 14 minutes (Wait + Get Submission Result), posts the full report with screenshots as alert comments, pushes the IOCs to an IOC collection and lists the suspicious or malicious child samples. Consumes VMRay quota. Before use: select your VMRay1 account on the VMRay1 nodes and set ioc_collection_id on 'Add IOCs to IOC Collection'.",
+  "description": "Run by an analyst on an alert to scan a URL. Submits the URL set on 'VMRay: Submit URL' (the harmless EICAR test file by default) to VMRay, waits for the analysis with Get Submission Result (up to 30 minutes), posts the full report with screenshots as alert comments, pushes the IOCs to an IOC collection and lists the suspicious or malicious child samples. Consumes VMRay quota. Before use: select your VMRay1 account on the VMRay1 nodes and set ioc_collection_id on 'Add IOCs to IOC Collection'.",
   "nodes": {
     "0": {
       "name": "Manual Trigger",
@@ -29,7 +29,7 @@
       "type": "action",
       "outputs": {
         "submitted": [
-          "19"
+          "20"
         ],
         "submission_failed": [
           "25"
@@ -37,7 +37,7 @@
       },
       "position": {
         "x": 2100,
-        "y": 1736
+        "y": 1710
       },
       "arguments": {
         "sample_url": "https://secure.eicar.org/eicar.com.txt",
@@ -57,8 +57,8 @@
         ]
       },
       "position": {
-        "x": 1800,
-        "y": 2680
+        "x": 2570,
+        "y": 2130
       },
       "arguments": {
         "submission_ids": "{{ node.6['submission_ids'] }}",
@@ -76,13 +76,13 @@
         "default": []
       },
       "position": {
-        "x": 3000,
-        "y": 4096
+        "x": 1630,
+        "y": 2130
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
         "author": "VMRay",
-        "content": "**VMRay: sandbox analysis incomplete** — the URL did not return a report: VMRay either finished the analysis with an error or was still analysing it at the last check.\n\nSubmission(s): {{ node.6['submission_ids'] | join(', ') }}. Open the submission in VMRay to follow it."
+        "content": "**VMRay: sandbox analysis incomplete** — the URL did not return a report: VMRay either finished the analysis with an error or was still analysing it when the 30 minute wait ended.\n\nSubmission(s): {{ node.6['submission_ids'] | join(', ') }}. Open the submission in VMRay to follow it."
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
       "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
@@ -97,8 +97,8 @@
         ]
       },
       "position": {
-        "x": 1800,
-        "y": 2916
+        "x": 2570,
+        "y": 2340
       },
       "arguments": {
         "report_path": "{{ node.8['report_path'] }}",
@@ -118,8 +118,8 @@
         ]
       },
       "position": {
-        "x": 1800,
-        "y": 3152
+        "x": 2570,
+        "y": 2550
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
@@ -150,8 +150,8 @@
       },
       "subtype": "condition",
       "position": {
-        "x": 2100,
-        "y": 3388
+        "x": 3040,
+        "y": 2760
       }
     },
     "13": {
@@ -163,8 +163,8 @@
         ]
       },
       "position": {
-        "x": 1800,
-        "y": 3624
+        "x": 2570,
+        "y": 2760
       },
       "arguments": {
         "report_path": "{{ node.8['report_path'] }}"
@@ -185,8 +185,8 @@
       },
       "subtype": "foreach",
       "position": {
-        "x": 2100,
-        "y": 3624
+        "x": 3040,
+        "y": 2970
       }
     },
     "15": {
@@ -196,8 +196,8 @@
         "default": []
       },
       "position": {
-        "x": 2400,
-        "y": 3624
+        "x": 3510,
+        "y": 3180
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
@@ -228,8 +228,8 @@
       },
       "subtype": "condition",
       "position": {
-        "x": 1800,
-        "y": 3860
+        "x": 2570,
+        "y": 2970
       }
     },
     "17": {
@@ -244,8 +244,8 @@
       },
       "subtype": "foreach",
       "position": {
-        "x": 1800,
-        "y": 4096
+        "x": 2570,
+        "y": 3180
       }
     },
     "18": {
@@ -255,8 +255,8 @@
         "default": []
       },
       "position": {
-        "x": 2100,
-        "y": 4096
+        "x": 3040,
+        "y": 3390
       },
       "arguments": {
         "valid_for": 30,
@@ -268,33 +268,15 @@
       "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
       "module_configuration_uuid": null
     },
-    "19": {
-      "name": "Wait (first check)",
-      "type": "action",
-      "outputs": {
-        "default": [
-          "20"
-        ]
-      },
-      "position": {
-        "x": 2100,
-        "y": 1972
-      },
-      "arguments": {
-        "duration": 120
-      },
-      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
-      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
-    },
     "20": {
-      "name": "VMRay: Get Submission Result (1)",
+      "name": "VMRay: Get Submission Result",
       "type": "action",
       "outputs": {
         "completed": [
           "8"
         ],
         "pending": [
-          "21"
+          "9"
         ],
         "failed": [
           "9"
@@ -302,100 +284,17 @@
       },
       "position": {
         "x": 2100,
-        "y": 2208
+        "y": 1920
       },
       "arguments": {
-        "submission_ids": "{{ node.6['submission_ids'] }}"
+        "submission_ids": "{{ node.6['submission_ids'] }}",
+        "timeout": 1800,
+        "poll_interval": 10
       },
       "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
       "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
-      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
-    },
-    "21": {
-      "name": "Wait (second check)",
-      "type": "action",
-      "outputs": {
-        "default": [
-          "22"
-        ]
-      },
-      "position": {
-        "x": 2400,
-        "y": 2208
-      },
-      "arguments": {
-        "duration": 240
-      },
-      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
-      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
-    },
-    "22": {
-      "name": "VMRay: Get Submission Result (2)",
-      "type": "action",
-      "outputs": {
-        "completed": [
-          "8"
-        ],
-        "pending": [
-          "23"
-        ],
-        "failed": [
-          "9"
-        ]
-      },
-      "position": {
-        "x": 2400,
-        "y": 2444
-      },
-      "arguments": {
-        "submission_ids": "{{ node.6['submission_ids'] }}"
-      },
-      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
-      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
-      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
-    },
-    "23": {
-      "name": "Wait (third check)",
-      "type": "action",
-      "outputs": {
-        "default": [
-          "24"
-        ]
-      },
-      "position": {
-        "x": 2700,
-        "y": 2444
-      },
-      "arguments": {
-        "duration": 480
-      },
-      "action_uuid": "41cd724b-bfcc-4fb7-bee7-ef5d02176e4c",
-      "module_uuid": "07cce76b-a319-40ee-a0cf-1ba433431e21"
-    },
-    "24": {
-      "name": "VMRay: Get Submission Result (3)",
-      "type": "action",
-      "outputs": {
-        "completed": [
-          "8"
-        ],
-        "pending": [
-          "9"
-        ],
-        "failed": [
-          "9"
-        ]
-      },
-      "position": {
-        "x": 2700,
-        "y": 2680
-      },
-      "arguments": {
-        "submission_ids": "{{ node.6['submission_ids'] }}"
-      },
-      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
-      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
-      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899"
+      "module_configuration_uuid": "77ab1ce2-97f4-4ca7-b33f-59b218e4e899",
+      "description": "Waits (up to 30 minutes) until VMRay has finished the analysis: completed goes on to the report, pending means it was still running when the wait ended, failed means VMRay finished it with an error"
     },
     "25": {
       "name": "Comment Alert (URL Not Submitted)",
@@ -404,8 +303,8 @@
         "default": []
       },
       "position": {
-        "x": 2400,
-        "y": 3152
+        "x": 1630,
+        "y": 1920
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
@@ -436,8 +335,8 @@
       },
       "subtype": "condition",
       "position": {
-        "x": 1500,
-        "y": 2916
+        "x": 3510,
+        "y": 2340
       },
       "description": "Build Report returned the submitted sample, whose child samples can be looked up"
     },
@@ -451,8 +350,8 @@
         "no_children": []
       },
       "position": {
-        "x": 1500,
-        "y": 3152
+        "x": 3510,
+        "y": 2550
       },
       "arguments": {
         "sample_id": "{{ node.8['sample_ids'][0] }}",
@@ -470,13 +369,13 @@
         "default": []
       },
       "position": {
-        "x": 1500,
-        "y": 3388
+        "x": 3510,
+        "y": 2760
       },
       "arguments": {
         "uuid": "{{ node.0['alert_uuid'] }}",
         "author": "VMRay",
-        "content": "**VMRay: {{ node.27['child_count'] }} suspicious or malicious child sample(s)** found found while analysing the URL ({{ node.27['total_child_count'] }} child sample(s) in total).\n\n{% for c in node.27['children'][:20] %}- **{{ c['verdict'] }}** `{{ c['name'] | string | replace('`', \"'\") }}` ({{ c['type'] }}, VTI {{ c['vti_score'] }}), sha256 `{{ c['sha256'] }}` — [View in VMRay]({{ c['webif_url'] }})\n{% endfor %}{% if node.27['child_count'] > 20 %}\nAnd {{ node.27['child_count'] - 20 }} more.{% endif %}"
+        "content": "**VMRay: {{ node.27['child_count'] }} suspicious or malicious child sample(s)** found while analysing the URL ({{ node.27['total_child_count'] }} child sample(s) in total).\n\n{% for c in node.27['children'][:20] %}- **{{ c['verdict'] }}** `{{ c['name'] | string | replace('`', \"'\") }}` ({{ c['type'] }}, VTI {{ c['vti_score'] }}), sha256 `{{ c['sha256'] }}` — [View in VMRay]({{ c['webif_url'] }})\n{% endfor %}{% if node.27['child_count'] > 20 %}\nAnd {{ node.27['child_count'] - 20 }} more.{% endif %}"
       },
       "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
       "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",

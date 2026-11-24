@@ -1,4 +1,4 @@
-"""Models of the submit actions (Submit Sample, Submit URL) and of Get Submission Result.
+"""Models of the submit actions (Submit Sample, Submit URL) and of Get Submission Result, which waits for them.
 
 Field names on VMRay-sourced models follow the VMRay Platform REST API verbatim (see module_models.py).
 
@@ -219,7 +219,7 @@ class SubmitSampleResults(SubmitResults):
 
 
 # --------------------------------------------------------------------------
-# Get Submission Result — one look at whether submissions have finished
+# Get Submission Result — waits until submissions have finished
 # --------------------------------------------------------------------------
 
 
@@ -227,8 +227,22 @@ class GetSubmissionResultArguments(BaseModel):
     submission_ids: list[int] = Field(
         ...,
         title="Submission IDs",
-        description="VMRay submission IDs to check — e.g. the `submission_ids` of Submit Sample or Submit URL. One "
-        "poll is made for each; the action does not wait.",
+        description="VMRay submission IDs to wait for — e.g. the `submission_ids` of Submit Sample or Submit URL.",
+    )
+    timeout: float = Field(
+        default=1800,
+        ge=0,
+        allow_inf_nan=False,
+        title="Wait timeout (s)",
+        description="Maximum time (seconds) to wait for every submission to finish. When it runs out the action "
+        "takes the `pending` branch. 0 checks once and returns at once.",
+    )
+    poll_interval: float = Field(
+        default=10,
+        gt=0,
+        allow_inf_nan=False,
+        title="Poll interval (s)",
+        description="The amount of seconds to wait between two checks of whether the submissions have finished.",
     )
 
     @field_validator("submission_ids", mode="before")
@@ -250,6 +264,9 @@ class GetSubmissionResultArguments(BaseModel):
 
 class GetSubmissionResultResults(BaseModel):
     all_finished: bool = Field(description="True when no submission is still running.")
+    timed_out: bool = Field(
+        default=False, description="True when the wait timed out before every submission finished."
+    )
     submissions: list[Submission] = Field(default_factory=list, description="Submissions that finished without error.")
     submission_ids: list[int] = Field(
         default_factory=list,
@@ -265,7 +282,7 @@ class GetSubmissionResultResults(BaseModel):
     pending_submission_ids: list[int] = Field(
         default_factory=list,
         title="Pending Submission IDs",
-        description="Submissions still running, or that could not be checked this time.",
+        description="Submissions still running when the wait ended, or that could not be checked.",
     )
     failed_submission_ids: list[int] = Field(
         default_factory=list,

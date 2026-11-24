@@ -1,18 +1,32 @@
 {
   "name": "Get Submission Result",
   "slug": "get_submission_result",
-  "description": "Check once whether VMRay submissions have finished: completed, still pending or failed. Does not wait and costs no quota.",
+  "description": "Wait until VMRay submissions have finished, then return them: completed, still pending when the wait timed out, or failed. Costs no quota.",
   "uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
   "docker_parameters": "GetSubmissionResult",
   "arguments": {
     "properties": {
       "submission_ids": {
-        "description": "VMRay submission IDs to check \u2014 e.g. the `submission_ids` of Submit Sample or Submit URL. One poll is made for each; the action does not wait.",
+        "description": "VMRay submission IDs to wait for \u2014 e.g. the `submission_ids` of Submit Sample or Submit URL.",
         "items": {
           "type": "integer"
         },
         "title": "Submission IDs",
         "type": "array"
+      },
+      "timeout": {
+        "default": 1800,
+        "description": "Maximum time (seconds) to wait for every submission to finish. When it runs out the action takes the `pending` branch. 0 checks once and returns at once.",
+        "minimum": 0,
+        "title": "Wait timeout (s)",
+        "type": "number"
+      },
+      "poll_interval": {
+        "default": 10,
+        "description": "The amount of seconds to wait between two checks of whether the submissions have finished.",
+        "exclusiveMinimum": 0,
+        "title": "Poll interval (s)",
+        "type": "number"
       }
     },
     "required": [
@@ -141,6 +155,12 @@
         "title": "All Finished",
         "type": "boolean"
       },
+      "timed_out": {
+        "default": false,
+        "description": "True when the wait timed out before every submission finished.",
+        "title": "Timed Out",
+        "type": "boolean"
+      },
       "submissions": {
         "description": "Submissions that finished without error.",
         "items": {
@@ -166,7 +186,7 @@
         "type": "array"
       },
       "pending_submission_ids": {
-        "description": "Submissions still running, or that could not be checked this time.",
+        "description": "Submissions still running when the wait ended, or that could not be checked.",
         "items": {
           "type": "integer"
         },

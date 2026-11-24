@@ -1,7 +1,8 @@
-"""Shared by Submit Sample and Submit URL: the POST /sample/submit form parameters and the two submit functions.
+"""Shared by the submission actions: the POST /sample/submit form parameters, the two submit functions and the check
+of where submissions stand.
 
-Both functions return a `Submitted`, so the two actions read the same way. Neither waits for the analysis: a playbook
-follows the submissions with a Sekoia `Wait` and Get Submission Result.
+Both submit functions return a `Submitted`, so Submit Sample and Submit URL read the same way. Neither waits for the
+analysis: Get Submission Result does, with `poll_submissions` once per round.
 
 Field names confirmed against the VMRay Platform REST API OpenAPI spec, v2026.2.1.
 """
@@ -11,9 +12,16 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 from typing import Any
 
+from pydantic import ValidationError
+
 from vmray_modules.base import UnsafeDataPathError, VMRayAction
-from vmray_modules.client import VMRayClientError
-from vmray_modules.submission_models import SubmissionOptions, SubmitSampleArguments, SubmitUrlArguments
+from vmray_modules.client import VMRayClient, VMRayClientError
+from vmray_modules.submission_models import (
+    Submission,
+    SubmissionOptions,
+    SubmitSampleArguments,
+    SubmitUrlArguments,
+)
 
 _FORM_OPTIONS = {
     "enable_reputation",
@@ -134,3 +142,35 @@ def submit_sample(action: VMRayAction, arguments: SubmitSampleArguments) -> Subm
         elif not refusals:  # a 200 with neither: say so rather than drop the file silently
             result.errors.append({"file": path, "error_msg": "VMRay returned no submission for this file"})
     return result
+
+
+@dataclass
+class Polled:
+    """One look at some submissions (one GET /submission/{id} each): the ones that finished, the ones that finished
+    with an error, and the ones still pending. A submission that could not be checked this time is pending too, with
+    the reason in `unchecked`: the next look may well work."""
+
+    finished: list[Submission] = field(default_factory=list)
+    failed: list[int] = field(default_factory=list)
+    pending: list[int] = field(default_factory=list)
+    unchecked: dict[int, str] = field(default_factory=dict)
+
+
+def poll_submissions(client: VMRayClient, submission_ids: list[int]) -> Polled:
+    """Ask VMRay once about each submission and sort them by where they stand."""
+    polled = Polled()
+    for submission_id in submission_ids:
+        try:
+            submission = Submission.model_validate(client.get_submission(submission_id))
+        except (VMRayClientError, ValidationError) as exc:
+            polled.pending.append(submission_id)
+            polled.unchecked[submission_id] = str(exc)
+            continue
+        state = submission.state
+        if state == "pending":
+            polled.pending.append(submission_id)
+        elif state == "failed":
+            polled.failed.append(submission_id)
+        else:
+            polled.finished.append(submission)
+    return polled

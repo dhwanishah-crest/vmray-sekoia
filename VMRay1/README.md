@@ -15,13 +15,13 @@ file (EDR) ──► Submit Sample ─┐
 URL ─────────► Submit URL ────┤                                  ┌─► Get Sample IOCs / VTIs / Mitre ATT&CK techniques
                               ├─► Get Submission Result ─► sample ┼─► Get Sample Screenshots / Report, Get Analysis Archive
                               │        (completed)                ├─► Get Child Samples ─► Get Child Sample Report
- (a Sekoia Wait comes before) │                                   └─► Build Report ─► Render Report ─► alert comment
+  (waits for the analysis)    │                                   └─► Build Report ─► Render Report ─► alert comment
 hashes ──► Get Samples By Hash ──────────────────────────────────────────────────────► Extract IOCs ─► IOC collection
 ```
 
 1. **Get something to analyse.** An EDR action such as SentinelOne's "Get malwares from threat" saves a file on the playbook run's storage and returns `files`, a list of `{"path": ...}`. Or use a URL, or look hashes up with `Get Samples By Hash` (no quota).
-2. **Submit it.** `Submit Sample` / `Submit URL` start the analysis and return at once: no action waits for an analysis, a playbook puts a Sekoia `Wait` before the check. Submitting consumes quota.
-3. **Follow it.** `Get Submission Result` is one look at whether the submissions finished (`completed`, `pending` or `failed`); a playbook repeats it after a Sekoia `Wait`.
+2. **Submit it.** `Submit Sample` / `Submit URL` start the analysis and return at once with the submission IDs. Submitting consumes quota.
+3. **Follow it.** `Get Submission Result` waits until the submissions have finished and returns them (`completed`, `pending` when the wait timed out, or `failed`). One block covers the whole wait, because a playbook has no loop.
 4. **Read the result.** Take only what you need with the `Get Sample ...` actions, look inside the sample with `Get Child Samples` and `Get Sample Relations`, or have `Build Report` gather everything into one JSON file on the run's storage. Only the file's path travels between nodes: a report with screenshots is far larger than Sekoia accepts as an action argument (SYM216).
 5. **Use the report.** `Render Report` turns it into the alert comment; `Extract IOCs` turns it into indicators for an IOC collection. Neither calls VMRay or Sekoia.
 
@@ -33,7 +33,7 @@ hashes ──► Get Samples By Hash ──────────────�
 |---|---|---|---|---|
 | Submit and follow | Submit Sample | uploads files and returns at once | `submitted` / `submission_failed` | yes |
 | | Submit URL | submits a URL and returns at once | `submitted` / `submission_failed` | yes |
-| | Get Submission Result | one look at whether submissions finished | `completed` / `pending` / `failed` | no |
+| | Get Submission Result | waits until submissions have finished | `completed` / `pending` / `failed` | no |
 | Look up | Get Samples By Hash | finds the samples VMRay already knows for hashes | `found` / `not_found` | no |
 | Read one part of a sample | Get Sample IOCs | the IOCs by category | `found` / `not_found` | no |
 | | Get Sample Mitre Attack Techniques | the ATT&CK techniques | `found` / `not_found` | no |
@@ -73,10 +73,10 @@ for (`N` is the node that produced the field):
 Use the branches rather than testing fields: `has_children` and `found` are there so a playbook can skip the steps that
 follow (Sekoia rejects a Foreach over an empty list).
 
-**No action waits.** An analysis takes minutes, and an action that polls keeps the playbook run open meanwhile. Sekoia
-has no loop that waits, but its Utils module has a `Wait` action (`duration` in seconds, up to 3600), so the playbook
-does the waiting: `Submit Sample` → `Wait` → `Get Submission Result`, repeated a fixed number of times (see
-`GetSubmissionResult` below). The SentinelOne and Scan URL templates do this.
+**Get Submission Result does the waiting.** An analysis takes minutes, and a Sekoia playbook has no loop (it has
+Foreach over a list, but nothing that repeats a step until something is true, and no way back to an earlier node). So
+the wait lives in one action: `Submit Sample` / `Submit URL` → `Get Submission Result` (polls VMRay every
+`poll_interval` seconds, up to `timeout`) → `Build Report`. Nothing else is needed between them.
 
 ### `SubmitSample` - Submit Sample
 
@@ -105,22 +105,24 @@ It takes the same inputs as `SubmitSample`, with `sample_url` (required: the URL
 
 ### `GetSubmissionResult` - Get Submission Result
 
-One look at whether submissions have finished: a single `GET /submission/{id}` for each ID, with no waiting and no loop. Takes the `submission_ids` of `SubmitSample` or `SubmitUrl`. Costs no quota.
+Waits until submissions have finished, then returns them. It makes a `GET /submission/{id}` for each submission still running, every `poll_interval` seconds, until none is pending or `timeout` runs out. A submission that has finished is not asked about again. Takes the `submission_ids` of `SubmitSample` or `SubmitUrl`. Costs no quota.
 
 | Argument | Default | Notes |
 |---|---|---|
 | `submission_ids` | required | one ID or a list; duplicates are checked once |
+| `timeout` | `1800` | seconds to wait for every submission to finish; then the `pending` branch. `0` checks once and returns at once |
+| `poll_interval` | `10` | seconds between two checks |
 
 **Outputs:**
-- `completed`: nothing is running and at least one submission finished without error. `submission_ids` and `sample_ids` are ready for `BuildReport`.
-- `pending`: at least one is still running, or could not be checked this time (`errors` says why). The submissions that already finished are in the results too.
+- `completed`: nothing is pending and at least one submission finished without error. `submission_ids` and `sample_ids` are ready for `BuildReport`.
+- `pending`: the wait timed out with a submission still running (`timed_out` is true), or `timeout` was `0` and one is running. The submissions that already finished are in the results too.
 - `failed`: every submission finished with an error.
 
-**Results:** `all_finished`, `submissions`, `submission_ids` and `sample_ids` (finished without error), `pending_submission_ids`, `failed_submission_ids`, `errors`.
+**Results:** `all_finished`, `timed_out`, `submissions`, `submission_ids` and `sample_ids` (finished without error), `pending_submission_ids`, `failed_submission_ids`, `errors`.
 
-A submission that cannot be checked stays pending instead of failing, because the next check may work. When not one of them could be checked (a wrong API key, VMRay down) the action fails, so a playbook never reads "pending" when nothing was looked at.
+A submission that cannot be checked stays pending instead of failing, because the next check may work; if it is still unreachable when the wait ends, `errors` says why. When not one submission could be checked in three rounds in a row (a wrong API key, VMRay down) the action fails, so a playbook never reads "pending" when nothing was looked at.
 
-**Using them in a playbook.** Sekoia has no loop that waits, but its Utils module has a `Wait` action (`duration` in seconds, up to 3600). A chain that does not hold one run open for the whole analysis: `Submit Sample` → `Wait` (say 120 s) → `Get Submission Result` → `completed` goes on to `Build Report`; `pending` goes to another `Wait` → `Get Submission Result`, repeated a fixed number of times, then a comment that the analysis is still running.
+**In a playbook** it is one block between the submit and the report: `Submit URL` (`submitted`) → `Get Submission Result` → `completed` goes on to `Build Report`; `pending` and `failed` go to a comment that the analysis did not finish. The run stays open while the action waits, up to `timeout` (30 minutes by default).
 
 ### `GetSamplesByHash` - Get Samples By Hash
 
@@ -310,7 +312,7 @@ Extracts a report's IOCs as indicators for Sekoia's "Add IOC to IOC Collection" 
 | `vmray1_sentinelone_demo.json` | Alert Created | Fetches a SentinelOne threat's file from the endpoint and scans it |
 | `vmray1_sentinelone_manual_tmp.json` | Manual - an analyst runs it on an alert | Same steps as the Alert Created one, for testing: run it on an alert whose first event carries a SentinelOne threat ID |
 
-All three work the same way after the file or URL is submitted: `Submit Sample` / `Submit URL` start the analysis and return at once, and the playbook checks it with `Wait` + `Get Submission Result` after 2, 6 and 14 minutes (120 s, then 240 s, then 480 s), so no run stays open for the whole analysis. `completed` goes on to `Build Report` → `Render Report` → Comment Alert, then the screenshot comments and the IOC push. A `Get Child Samples` branch (suspicious or worse, up to 10 levels) also posts a comment listing the dangerous files VMRay found inside the submitted file. When VMRay refuses the submission, finishes with an error, or is still analysing at the third check, a comment says so with the submission IDs. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
+All three work the same way after the file or URL is submitted: `Submit Sample` / `Submit URL` start the analysis and return at once, and one `Get Submission Result` waits for it (up to 30 minutes). `completed` goes on to `Build Report` → `Render Report` → Comment Alert, then the screenshot comments and the IOC push. A `Get Child Samples` branch (suspicious or worse, up to 10 levels) also posts a comment listing the dangerous files VMRay found inside the submitted file. When VMRay refuses the submission, finishes with an error, or is still analysing when the wait ends, a comment says so with the submission IDs. Each Foreach (screenshot comments, IOC types) sits behind a condition that skips it when its list is empty - Sekoia rejects a Foreach over an empty list ("Foreach input is not a list").
 
 **After creating a playbook from a template:** select your VMRay1 account on the VMRay1 nodes, and set `ioc_collection_id` on "Add IOCs to IOC Collection". For the SentinelOne ones, also select your SentinelOne account (its API user needs the permission to fetch threat files, and the endpoint's agent must be online) and consider limiting the trigger to SentinelOne rules: every file or URL submitted consumes quota.
 

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-11-24 - 1.4.0
+
+### Changed
+- Get Submission Result now waits: it polls VMRay every `poll_interval` seconds (10 by default) until every submission has finished or `timeout` runs out (1800 s by default), then returns. `pending` now means the wait timed out, and the results gain `timed_out`. `timeout` 0 keeps the old single look. A playbook has no loop, so the Wait + Get Submission Result chain of three checks is replaced by one Get Submission Result block after the submit
+- The playbook templates use that one block: Submit, Get Submission Result, Build Report. They are laid out top to bottom, with every arrow running downward
+- Get Submission Result fails after three rounds in a row in which no submission could be checked, instead of staying pending until the timeout
+- Fixed the child-samples comment of the Scan URL playbook ("found found while analysing")
+
 ## 2026-11-24 - 1.3.0
 
 ### Removed

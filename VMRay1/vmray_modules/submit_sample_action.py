@@ -2,7 +2,7 @@
 
 Each file is submitted on its own: one that cannot be read or that VMRay refuses is reported in `errors` and the
 others still go through. The action does not wait for the analyses: it returns the IDs of the submissions VMRay
-started. A playbook follows them with a Sekoia `Wait` and Get Submission Result. Consumes quota.
+started. Give them to Get Submission Result, which waits for the analyses. Consumes quota.
 
 Takes the `submitted` branch when VMRay started at least one submission and `submission_failed` otherwise.
 """

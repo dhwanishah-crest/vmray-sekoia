@@ -8,7 +8,7 @@
       "VMRay1"
     ],
     "workspace": "Operation Center",
-    "description": "On every new SentinelOne alert, fetch the threat's file from the endpoint, start the VMRay analysis, check it after 2, 6 and 14 minutes, post the report with screenshots as alert comments, push the IOCs to an IOC collection and list the suspicious child samples"
+    "description": "On every new SentinelOne alert, fetch the threat's file from the endpoint, submit it to VMRay, wait for the analysis, post the report with screenshots as alert comments, push the IOCs to an IOC collection and list the suspicious child samples"
   },
   {
     "file": "vmray1_sentinelone_manual_tmp.json",
@@ -31,6 +31,6 @@
       "VMRay1"
     ],
     "workspace": "Operation Center",
-    "description": "Scan a URL on demand: submit it to VMRay, check the analysis, post the report with screenshots as alert comments, push the IOCs and list the suspicious child samples"
+    "description": "Scan a URL on demand: submit it to VMRay, wait for the analysis, post the report with screenshots as alert comments, push the IOCs and list the suspicious child samples"
   }
 ]
