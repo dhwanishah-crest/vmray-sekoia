@@ -1,0 +1,476 @@
+{
+  "name": "Test: Download and scan an archive (all VMRay1 actions)",
+  "uuid": "7e3feced-74d0-4be2-8bc1-95cfd88f5c54",
+  "tags": [
+    "Alerts",
+    "Test",
+    "VMRay1"
+  ],
+  "workspace": "Operation Center",
+  "description": "Run by an analyst on an alert to try every VMRay1 action on a nested zip with several child files. The Test integration downloads the archive, VMRay1 submits it, waits for the analysis, builds and posts the report, then each Get action runs once on the sample (IOCs, VTIs, Mitre ATT&CK techniques, screenshots, analysis archive, VMRay's own report, child samples, one child's report, relations), plus two hash lookups. Consumes VMRay quota. Before use: select your VMRay1 account on the VMRay1 nodes. The Test integration needs no account.",
+  "nodes": {
+    "0": {
+      "name": "Manual Trigger",
+      "type": "trigger",
+      "outputs": {
+        "default": [
+          "1"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1500
+      },
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "trigger_uuid": "fc26eb9f-b272-4c15-b3bf-ace397c0dc57",
+      "trigger_configuration_uuid": "dde63d28-a164-41c4-b49a-aafb36f0d6d1"
+    },
+    "1": {
+      "name": "Test: Download File",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "2"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1710
+      },
+      "arguments": {
+        "url": "https://raw.githubusercontent.com/dhwanishah-crest/vmray-sekoia/test/Test/samples/nested_multi_child.zip",
+        "file_name": "nested_multi_child.zip",
+        "max_size_mb": 50
+      },
+      "action_uuid": "1c9c5492-e9cc-4d45-9ac4-e17c24d0c8f0",
+      "module_uuid": "7593a534-1baf-4bcf-a01e-4b103176749e",
+      "module_configuration_uuid": null,
+      "description": "Downloads the nested test archive (a zip in a zip in a zip, ten harmless files). Set another zip URL here to test other files."
+    },
+    "2": {
+      "name": "VMRay: Submit Sample",
+      "type": "action",
+      "outputs": {
+        "submitted": [
+          "3"
+        ],
+        "submission_failed": [
+          "40"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 1920
+      },
+      "arguments": {
+        "files": "{{ node.1['files'] }}",
+        "reanalyze": true,
+        "max_recursive_samples": 10
+      },
+      "action_uuid": "0004db2a-af6e-4fd7-ba12-333600ea4afc",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "3": {
+      "name": "VMRay: Get Submission Result",
+      "type": "action",
+      "outputs": {
+        "completed": [
+          "4"
+        ],
+        "failed": [
+          "41"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2130
+      },
+      "arguments": {
+        "submission_ids": "{{ node.2['submission_ids'] }}",
+        "timeout": 3600
+      },
+      "action_uuid": "ddcc5e89-50da-4cd6-b7a8-f027fecf77ee",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "4": {
+      "name": "VMRay: Build Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "5",
+          "7"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2340
+      },
+      "arguments": {
+        "submission_ids": "{{ node.2['submission_ids'] }}",
+        "include_screenshots": true,
+        "max_recursion_depth": 5
+      },
+      "action_uuid": "9689eaa4-7411-44e3-a6b8-817121c41256",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "5": {
+      "name": "VMRay: Render Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "6"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2550
+      },
+      "arguments": {
+        "report_path": "{{ node.4['report_path'] }}",
+        "max_comment_kb": 512
+      },
+      "action_uuid": "8d9030e2-fdab-435d-b7a9-c5516a43d362",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "6": {
+      "name": "Comment Alert (Report)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "8"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2760
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "{{ node.5['content'] }}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "7": {
+      "name": "VMRay: Extract IOCs",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 2570,
+        "y": 2550
+      },
+      "arguments": {
+        "report_path": "{{ node.4['report_path'] }}"
+      },
+      "action_uuid": "c75fb414-5642-4797-85fa-603502cd9bbb",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "8": {
+      "name": "VMRay: Get Samples By Hash (known + unknown)",
+      "type": "action",
+      "outputs": {
+        "found": [
+          "9"
+        ],
+        "not_found": [
+          "9"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 2970
+      },
+      "arguments": {
+        "hashes": [
+          "{{ node.1['sha256'] }}",
+          "0000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      },
+      "action_uuid": "4d76e52d-fa54-4e6f-9ff7-ad075f423de9",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "9": {
+      "name": "VMRay: Get Samples By Hash (unknown only)",
+      "type": "action",
+      "outputs": {
+        "found": [
+          "10"
+        ],
+        "not_found": [
+          "10"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 3180
+      },
+      "arguments": {
+        "hashes": [
+          "1111111111111111111111111111111111111111111111111111111111111111"
+        ]
+      },
+      "action_uuid": "4d76e52d-fa54-4e6f-9ff7-ad075f423de9",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "10": {
+      "name": "VMRay: Get Sample IOCs",
+      "type": "action",
+      "outputs": {
+        "found": [
+          "11"
+        ],
+        "not_found": [
+          "11"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 3390
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}"
+      },
+      "action_uuid": "c598aed8-6ca0-43d0-bf34-c769bc330906",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "11": {
+      "name": "VMRay: Get Sample VTIs",
+      "type": "action",
+      "outputs": {
+        "found": [
+          "12"
+        ],
+        "not_found": [
+          "12"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 3600
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}"
+      },
+      "action_uuid": "93d9a13f-cc8f-4fc2-a196-f9d59881bf1c",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "12": {
+      "name": "VMRay: Get Sample Mitre Attack Techniques",
+      "type": "action",
+      "outputs": {
+        "found": [
+          "13"
+        ],
+        "not_found": [
+          "13"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 3810
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}"
+      },
+      "action_uuid": "9bd73b23-1d65-406d-b2d0-e6e47483bf91",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "13": {
+      "name": "VMRay: Get Sample Screenshots",
+      "type": "action",
+      "outputs": {
+        "found": [
+          "14"
+        ],
+        "not_found": [
+          "15"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 4020
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}"
+      },
+      "action_uuid": "180677ed-2045-4614-b362-93d487a10e69",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "14": {
+      "name": "VMRay: Get Analysis Archive",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "15"
+        ]
+      },
+      "position": {
+        "x": 2570,
+        "y": 4230
+      },
+      "arguments": {
+        "analysis_id": "{{ node.13['screenshots'][0]['analysis_id'] }}"
+      },
+      "action_uuid": "e5832f31-e40b-4aed-962f-e8fbe6a4ed66",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "15": {
+      "name": "VMRay: Get Sample Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "16"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 4440
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}"
+      },
+      "action_uuid": "ef91345c-c4af-48f5-9a7d-af7d35c7ed9b",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "16": {
+      "name": "VMRay: Get Child Samples",
+      "type": "action",
+      "outputs": {
+        "has_children": [
+          "19"
+        ],
+        "no_children": [
+          "18"
+        ]
+      },
+      "position": {
+        "x": 2100,
+        "y": 4650
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}",
+        "max_depth": 10
+      },
+      "action_uuid": "2da386a5-668f-4ade-b399-a6171f6d763b",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "17": {
+      "name": "VMRay: Get Child Sample Report",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "18"
+        ]
+      },
+      "position": {
+        "x": 2570,
+        "y": 5070
+      },
+      "arguments": {
+        "parent_sample_id": "{{ node.16['sample_id'] }}",
+        "child_sample_id": "{{ node.16['sample_ids'][0] }}",
+        "max_recursion_depth": 5,
+        "include_screenshots": false
+      },
+      "action_uuid": "c15aed02-443e-43ac-97eb-acb92deadd53",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "18": {
+      "name": "VMRay: Get Sample Relations",
+      "type": "action",
+      "outputs": {
+        "found": [],
+        "not_found": []
+      },
+      "position": {
+        "x": 2100,
+        "y": 5280
+      },
+      "arguments": {
+        "sample_id": "{{ node.3['sample_ids'][0] }}"
+      },
+      "action_uuid": "c8125525-77dd-438c-8927-b5417da83a2e",
+      "module_uuid": "ec8b2e5d-08be-46c5-8280-c57effcdeab2",
+      "module_configuration_uuid": "5c56a315-4a0d-4d48-8a07-d0882fbaf332"
+    },
+    "19": {
+      "name": "Comment Alert (Child Samples)",
+      "type": "action",
+      "outputs": {
+        "default": [
+          "17"
+        ]
+      },
+      "position": {
+        "x": 2570,
+        "y": 4860
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**VMRay: {{ node.16['child_count'] }} child sample(s)** found inside the archive ({{ node.16['total_child_count'] }} in total).\n\n{% for c in node.16['children'][:30] %}- depth {{ c['depth'] }}: **{{ c['verdict'] or 'no verdict' }}** `{{ c['name'] | string | replace('`', \"'\") }}` ({{ c['type'] }}), sha256 `{{ c['sha256'] }}` — [View in VMRay]({{ c['webif_url'] }})\n{% endfor %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "40": {
+      "name": "Comment Alert (Not Submitted)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 1630,
+        "y": 2130
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**Test playbook: the archive was not submitted to VMRay.**{% if node.2['errors'] %}\n\nErrors:\n{% for e in node.2['errors'] %}\n- `{{ (e.get('error_msg') or 'unknown error') | string | replace('`', \"'\") }}`{% endfor %}{% endif %}"
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    },
+    "41": {
+      "name": "Comment Alert (Analysis Incomplete)",
+      "type": "action",
+      "outputs": {
+        "default": []
+      },
+      "position": {
+        "x": 1630,
+        "y": 2340
+      },
+      "arguments": {
+        "uuid": "{{ node.0['alert_uuid'] }}",
+        "author": "VMRay",
+        "content": "**Test playbook: the analysis did not finish.** VMRay either finished it with an error or was still analysing it when the 60 minute wait ended. Submission(s): {{ node.2['submission_ids'] | join(', ') }}."
+      },
+      "action_uuid": "0d323de3-a864-4afe-a0c3-e7ff45883d7a",
+      "module_uuid": "92d8bb47-7c51-445d-81de-ae04edbb6f0a",
+      "module_configuration_uuid": null
+    }
+  },
+  "community_uuid": "2b44a715-e677-4489-9803-19c8e7929f85"
+}

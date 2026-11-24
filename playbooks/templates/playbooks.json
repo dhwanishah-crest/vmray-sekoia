@@ -32,5 +32,16 @@
     ],
     "workspace": "Operation Center",
     "description": "Scan a URL on demand: submit it to VMRay, wait for the analysis, post the report with screenshots as alert comments, push the IOCs and list the suspicious child samples"
+  },
+  {
+    "file": "test_download_and_scan_archive.json",
+    "name": "Test: Download and scan an archive (all VMRay1 actions)",
+    "tags": [
+      "Alerts",
+      "Test",
+      "VMRay1"
+    ],
+    "workspace": "Operation Center",
+    "description": "Download a nested zip with the Test integration, submit it to VMRay and run every VMRay1 action on the result"
   }
 ]

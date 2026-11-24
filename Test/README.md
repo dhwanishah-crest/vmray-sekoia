@@ -49,9 +49,26 @@ Download File ──► Submit Sample ──► Get Submission Result ──► 
 | Download File | `files` | VMRay1 Submit Sample | `files` | `{{ node.N['files'] }}` |
 | Submit Sample | `submission_ids` | VMRay1 Get Submission Result | `submission_ids` | `{{ node.N['submission_ids'] }}` |
 
-Good files to try: the EICAR test file `https://secure.eicar.org/eicar.com.txt`, and the EICAR zip
-`https://secure.eicar.org/eicar_com.zip`, which VMRay opens to find a child sample (that exercises Get Child Samples,
-Get Child Sample Report and the child rows of the report). Every file submitted to VMRay consumes quota.
+Files to try (every file submitted to VMRay consumes quota):
+
+| File | URL | What it tests |
+|---|---|---|
+| Nested archive with several child files | `https://raw.githubusercontent.com/dhwanishah-crest/vmray-sekoia/test/Test/samples/nested_multi_child.zip` | a zip in a zip in a zip, ten harmless files: Get Child Samples, Get Child Sample Report and the child tree of the report |
+| The EICAR test zip | `https://secure.eicar.org/eicar_com.zip` | a zip with one test file inside, which VMRay judges malicious |
+| The EICAR test file | `https://secure.eicar.org/eicar.com.txt` | a single malicious file |
+
+The nested archive is built by `samples/build_nested_archive.py` (run it to rebuild the file) and holds only harmless
+text, scripts and pages: no malware and no EICAR string, so no antivirus has a reason to touch the repository. A test
+checks that the committed zip is exactly what the script makes. It is downloaded from the public repository, so it needs
+the repository to stay public.
+
+### The test playbook
+
+`playbooks/templates/test_download_and_scan_archive.json` ("Test: Download and scan an archive") runs every VMRay1
+action on that archive: Download File, Submit Sample, Get Submission Result, Build Report, Render Report, Extract IOCs,
+two Get Samples By Hash (one known hash, one unknown), Get Sample IOCs, VTIs, Mitre Attack Techniques, Screenshots,
+Get Analysis Archive, Get Sample Report, Get Child Samples, Get Child Sample Report and Get Sample Relations. Change the
+URL on the Download File node to try another zip.
 
 ## Development
 

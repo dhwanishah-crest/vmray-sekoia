@@ -1,9 +1,12 @@
 """Download File: the action, the download logic and the checks on the URL."""
 
 import hashlib
+import importlib.util
+import io
 import ipaddress
 import json
 import socket
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -101,6 +104,91 @@ def test_the_url_is_stripped(requests_mock):
     requests_mock.get(URL, content=ZIP)
 
     assert run({"url": f"  {URL}  "})["url"] == URL
+
+
+# ---- zip files --------------------------------------------------------------------------------------------------
+
+
+def load_builder():
+    spec = importlib.util.spec_from_file_location("build_nested_archive", ROOT / "samples" / "build_nested_archive.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def zip_tree(data: bytes, prefix: str = "") -> dict[str, bytes]:
+    """Every file of a zip and of the zips inside it, by path: `level1.zip/level2.zip/c.txt`."""
+    found = {}
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        for name in archive.namelist():
+            content = archive.read(name)
+            found[prefix + name] = content
+            if name.endswith(".zip"):
+                found.update(zip_tree(content, f"{prefix}{name}/"))
+    return found
+
+
+def test_a_binary_file_is_saved_byte_for_byte(requests_mock, storage):
+    every_byte = bytes(range(256)) * 40
+    requests_mock.get(URL, content=every_byte)
+
+    name = run({"url": URL})["file_name"]
+
+    assert (Path(storage) / name).read_bytes() == every_byte
+
+
+def test_a_real_zip_is_saved_whole_and_can_be_opened(requests_mock, storage):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("one.txt", "first file")
+        archive.writestr("two.txt", "second file")
+    requests_mock.get(URL, content=buffer.getvalue(), headers={"Content-Type": "application/zip"})
+
+    result = run({"url": URL})
+
+    saved = (Path(storage) / result["file_name"]).read_bytes()
+    assert saved == buffer.getvalue() and result["sha256"] == hashlib.sha256(saved).hexdigest()
+    with zipfile.ZipFile(io.BytesIO(saved)) as archive:
+        assert archive.testzip() is None and archive.namelist() == ["one.txt", "two.txt"]
+
+
+def test_a_zip_sent_as_a_download_with_a_content_disposition_keeps_its_zip_name(requests_mock):
+    requests_mock.get(
+        "https://files.example.org/download?id=7",
+        content=ZIP,
+        headers={
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": "attachment; filename=samples.zip",
+        },
+    )
+
+    assert run({"url": "https://files.example.org/download?id=7"})["file_name"].endswith("-samples.zip")
+
+
+def test_the_nested_sample_archive_comes_through_with_every_child_file(requests_mock, storage):
+    data = load_builder().build()
+    requests_mock.get(URL, content=data, headers={"Content-Type": "application/zip"})
+
+    saved = (Path(storage) / run({"url": URL})["file_name"]).read_bytes()
+
+    tree = zip_tree(saved)
+    assert saved == data
+    # three zips deep, several files at every level
+    assert {"README.txt", "hello.bat", "hello.ps1", "index.html", "level1.zip"} <= set(tree)
+    assert {"level1.zip/a.txt", "level1.zip/run.cmd", "level1.zip/level2.zip"} <= set(tree)
+    assert {"level1.zip/level2.zip/c.txt", "level1.zip/level2.zip/d.js"} <= set(tree)
+    assert len(tree) == 10  # at most VMRay's limit of 10 recursive samples, so every child is analysed
+
+
+def test_the_sample_archive_holds_nothing_an_antivirus_would_flag():
+    tree = zip_tree(load_builder().build())
+
+    assert all(b"EICAR" not in content.upper() for content in tree.values())
+
+
+def test_the_committed_sample_archive_is_what_the_builder_makes():
+    """The file the playbook downloads must not drift from the script that documents it."""
+    assert (ROOT / "samples" / "nested_multi_child.zip").read_bytes() == load_builder().build()
 
 
 # ---- redirects -------------------------------------------------------------------------------------------------

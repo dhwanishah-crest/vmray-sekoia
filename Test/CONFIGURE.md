@@ -14,3 +14,5 @@ Sample) in tests. The integration connects to nothing and has no settings.
 3. Add `Download File` and set `url`, for example `https://secure.eicar.org/eicar_com.zip` (a zip with one test file
    inside).
 4. Give its `files` to VMRay1's `Submit Sample`: `{{ node.N['files'] }}`, where `N` is the Download File node.
+
+A ready-made playbook that does this and then runs every VMRay1 action is in `playbooks/templates/test_download_and_scan_archive.json`.
